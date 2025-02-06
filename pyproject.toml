@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "app-name"
+name = "MOBI_QC"
 version = "0.1.0"
-description = "A beautiful description."
-authors = ["Reinder Vos de Wael <reinder.vosdewael@childmind.org>"]
-license = "LGPL-2.1"
+description = "mobi qc"
+authors = ["BryanGonzalez262 <bsg262@gmail.com>"]
+license = "GNU Lesser General Public License v3.0"
 readme = "README.md"
-packages = [{include = "APP_NAME", from = "src"}]
+packages = [{include = "MOBI_QC", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"
