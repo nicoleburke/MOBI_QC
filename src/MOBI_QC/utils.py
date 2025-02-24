@@ -6,7 +6,7 @@ def import_eyetracking_data(xdf_filename):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'ET'}])
     column_labels = [data[0]['info']['desc'][0]['channels'][0]['channel'][i]['label'][0] for i in range(len(data[0]['info']['desc'][0]['channels'][0]['channel']))]
     df = pd.DataFrame(data[0]['time_series'], columns=column_labels)
-
+    df['lsl_time_stamp'] = data[0]['time_stamps']
     return df
 
 
