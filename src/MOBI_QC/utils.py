@@ -11,7 +11,20 @@ def import_eyetracking_data(xdf_filename):
 
 
 
+def import_eeg_data(xdf_filename):
+    data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'EEG'}])
+    ch_names = [f"E{i+1}" for i in range(data[0]['time_series'].shape[1])]
+    df = pd.DataFrame(data[0]['time_series'], columns=ch_names, index=data[0]['time_stamps'])    
+    return df
+
+
 def get_stim(xdf_filename):
+    '''
+    Get the stimuli dataframe from the xdf file.
+    
+    Args:
+        xdf_filename (str): The xdf file to get the stimuli from.
+    '''
     stim, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name':'Stimuli_Markers'}])
     stim_df = pd.DataFrame(stim[0]['time_series'])
     stim_df.rename(columns={0: 'trigger'}, inplace=True)
