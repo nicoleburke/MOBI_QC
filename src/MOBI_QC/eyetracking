@@ -1,0 +1,91 @@
+#%%
+import pyxdf
+import numpy as np
+import pandas as pd
+from utils import *
+import seaborn as sns
+import matplotlib.pyplot as plt
+import math
+import matplotlib.animation as animation
+
+#%%
+
+xdf_filename = '/Users/bryan.gonzalez/CUNY_subs/sub-P5548165/sub-P5548165_ses-S001_task-CUNY_run-001_mobi.xdf'
+
+et_df = get_event_data('Experiment', 
+                       df= import_eyetracking_data(xdf_filename),
+                       stim_df=get_stim(xdf_filename))
+
+# %%
+# This line checked if there are gaps in the lsl time stamps by simply getting the difference between consecutive time stamps and confirming that they are all equal to the expected sampling rate (1/20).
+sum([math.isclose(x, 1/120, abs_tol=1e9) for x in et_df.lsl_time_stamp.diff()]) == len(et_df) - 1
+#%%
+# df with percent loss for each sub, each modality
+et_df['diff'] = et_df['lsl_time_stamp'].diff()
+modalities = ['et']
+percent_list = []
+
+for modality in modalities:
+    #df = globals()[modality+'_df']
+    df = et_df
+    #subject = sub_name
+    
+    # median diff between lsl_time_stamp (with 1.05 margin) 
+    median1 = df['diff'].median() * 1.05
+    # number of loss instances  
+    loss_instances = (df['diff'] > median1).sum()
+    if loss_instances != 0:
+        # amount of data skipped: values for which diff>median 
+        amt_data_lost = df.loc[df['diff'] > median1, 'diff'].values[0].sum()
+        # total amount of data: last - first lsl_time_stamp
+        amt_data_total = df['lsl_time_stamp'].values[-1] - df['lsl_time_stamp'].values[0]
+
+        percent_lost = round(amt_data_lost/amt_data_total * 100, 3)
+    else:
+        percent_lost = 0
+    percent_list.append({'subject': '5548165', 'modality': modality, 'num_losses': loss_instances, 'percent_lost': percent_lost})
+        
+percent_data_loss = pd.DataFrame(percent_list)
+#percent_data_loss.sort_values(by='date', inplace=True, ascending=True)
+nonzero_loss = percent_data_loss[percent_data_loss['percent_lost'] != 0]
+nonzero_loss
+
+#
+# %%
+cols = ['lsl_time_stamp', 
+        'left_gaze_origin_in_user_coordinate_system_0', 
+        'left_gaze_origin_in_user_coordinate_system_1',
+        'right_gaze_origin_in_user_coordinate_system_0',
+        'right_gaze_origin_in_user_coordinate_system_1']
+
+df = et_df[cols].copy()
+df.rename(columns={'left_gaze_origin_in_user_coordinate_system_0': 'left_x',
+                    'left_gaze_origin_in_user_coordinate_system_1': 'left_y',
+                    'right_gaze_origin_in_user_coordinate_system_0': 'right_x',
+                    'right_gaze_origin_in_user_coordinate_system_1': 'right_y'}, inplace=True)
+
+
+# %%
+# Create figure and axis
+# Create figure and axis
+fig, ax = plt.subplots()
+ax.set_xlim(df[['left_x', 'right_x']].min().min() - 1, df[['left_x', 'right_x']].max().max() + 1)
+ax.set_ylim(df[['left_y', 'right_y']].min().min() - 1, df[['left_y', 'right_y']].max().max() + 1)
+
+# Scatter plot objects
+obj1, = ax.plot([], [], 'ro', label="Object 1")  # Red dot
+obj2, = ax.plot([], [], 'bo', label="Object 2")  # Blue dot
+ax.legend()
+
+# Update function for animation
+def update(frame):
+    obj1.set_data(df.loc[frame, 'left_x'], df.loc[frame, 'left_y'])
+    obj2.set_data(df.loc[frame, 'right_x'], df.loc[frame, 'right_y'])
+    return obj1, obj2
+
+# Create animation
+ani = animation.FuncAnimation(fig, update, frames=len(df), interval=500, blit=True)
+
+# Show animation
+plt.show()
+# %%
