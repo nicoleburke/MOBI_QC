@@ -8,7 +8,7 @@ def fibonacci(n: int) -> int:
         n: The index of the Fibonacci number to return.
 
     Returns:
-        heyyyyyThe n-th Fibonacci number.
+        wef;jerheyyyyyThe n-th Fibonacci number.
     """
     if n < 0:
         raise ValueError("n must be non-negative")
