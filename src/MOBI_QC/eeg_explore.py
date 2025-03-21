@@ -37,94 +37,8 @@ xdf_filename = '/Users/bryan.gonzalez/CUNY_subs/sub-P5029423/sub-P5029423_ses-S0
 df = get_event_data(event='RestingState', 
                     df=import_eeg_data(xdf_filename),
                     stim_df=get_stim(xdf_filename))
-#%%
-# Make the time stamps column the index
-df.set_index('lsl_time_stamp', inplace=True)
 
 #%%
-metrics = {}
-sampling_rate = 1/df.index.to_series().diff().mean()
-
-for channel in df.columns:
-
-    if channel == 'lsl_time_stamp':
-        continue
-
-    signal =  df[channel].values
-    signal = signal * 1e6 # convert to microvolts
-
-    # Peak-to-peak amplitude
-    peak_to_peak = np.ptp(signal)
-
-    # Compute the absolute voltage range
-    abs_range = np.max(signal) - np.min(signal)
-    # Compute standard deviation of amplitude
-    std = np.std(signal)
-
-
-    # Check for flat channels that have zero variance
-    is_flat = np.var(signal) < 1e6 # threshold for flatness
-
-    # compute power spectral density using Welch's method
-    freqs, psd = welch(signal, fs=sampling_rate, nperseg=min(256, len(signal)))
-
-    # powerline noise
-    powerline_freq = 60 if sampling_rate >= 120 else 50
-    powerline_power = np.sum(psd[(freqs >= powerline_freq - 1) & (freqs <= powerline_freq + 1)])
-
-    # High frequency noise
-    hf_noise = np.sum(psd[freqs >= 100] if np.any(freqs >= 100) else np.nan)
-    # Compute low frequency noise
-    lf_noise = np.sum(psd[freqs <= .5] if np.any(freqs <= .5) else np.nan)
-    # Compute alpha power
-    alpha_power = np.sum(psd[(freqs >= 8) & (freqs <= 12)] if np.any((freqs >= 8) & (freqs <= 13)) else np.nan)
-    
-
-
-    # Signal-to-noise ratio
-    signal_power = np.sum(psd[(freqs >= .5) & (freqs <= 40)]) # the EEG range
-    noise_power = np.sum(psd[freqs > 40]) + 1e-6 # avoid division by zero
-    snr = 10 * np.log10(signal_power / noise_power)
-
-    # compute spectral entropy
-    valid_idx = (freqs >= .5) & (freqs <= 40)
-    psd = psd[valid_idx]
-    freqs = freqs[valid_idx]
-    psd_norm = psd / np.sum(psd)
-    spectral_entropy = -np.sum(psd_norm * np.log2(psd_norm) + 1e10) #avoid log(0)
-
-    metrics[channel] = {"peak_to_peak": peak_to_peak,
-                        "is_flat": is_flat,
-                        "powerline_power": powerline_power,
-                        "hf_noise": hf_noise,
-                        "lf_noise": lf_noise,
-                        "alpha_power": alpha_power,
-                        "spectral_entropy": spectral_entropy,
-                        "snr": snr}
-
-quality_df = pd.DataFrame.from_dict(metrics, orient='index')
-
-# Compute dropped samples
-timestamps = df.index
-time_diffs = np.diff(timestamps)
-expected_diff = 1/sampling_rate
-dropped_samples = np.sum(time_diffs > expected_diff * 1.5)
-
-# compute % of dropouts
-prcnt_dropout = dropped_samples / len(timestamps) * 100
-
-
-quality_df['dropped_samples'] = dropped_samples
-quality_df['prcnt_dropout'] = prcnt_dropout
-
-
-
-#%%
-
-df = get_event_data(event='RestingState', 
-                    df=import_eeg_data(xdf_filename),
-                    stim_df=get_stim(xdf_filename))
-
 ch_names = [f"E{i+1}" for i in range(df.shape[1] - 1)]
 info = mne.create_info(ch_names, 
                        sfreq=1/df.lsl_time_stamp.diff().mean(), 
@@ -228,11 +142,11 @@ print(percent_good)
 
 #%%
 # PSD
+f, ax = plt.subplots()
 psds, freqs = mne.time_frequency.psd_array_multitaper(raw_cleaned, sfreq=1000, fmin=.5, fmax=80, n_jobs=1)
 psds = 10 * np.log10(psds)
 psds_mean = psds.mean(0)
 psds_std = psds.std(0)
-f, ax = plt.subplots()
 ax.plot(freqs, psds_mean, color='k')
 ax.fill_between(freqs, psds_mean - psds_std, psds_mean + psds_std,
                 color='k', alpha=.5)
@@ -303,7 +217,7 @@ def eeg_qc():
     df = get_event_data(event='RestingState', 
                         df=import_eeg_data(xdf_filename),
                         stim_df=get_stim(xdf_filename))
-    #%%
+
     # Make the time stamps column the index
     df.set_index('lsl_time_stamp', inplace=True)
 
