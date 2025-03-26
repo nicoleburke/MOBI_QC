@@ -1,13 +1,37 @@
 import pandas as pd
 import pyxdf
+import tarfile
+from io import BytesIO
+import os
 
-import numpy as np
-import sounddevice as sd
-from glob import glob
-from tqdm import tqdm
-import datetime
 
-events = {
+def import_eyetracking_data(xdf_filename):
+    data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'ET'}])
+    column_labels = [data[0]['info']['desc'][0]['channels'][0]['channel'][i]['label'][0] for i in range(len(data[0]['info']['desc'][0]['channels'][0]['channel']))]
+    df = pd.DataFrame(data[0]['time_series'], columns=column_labels)
+    df['lsl_time_stamp'] = data[0]['time_stamps']
+    return df
+
+
+
+def import_eeg_data(xdf_filename):
+    data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'EEG'}])
+    ch_names = [f"E{i+1}" for i in range(data[0]['time_series'].shape[1])]
+    df = pd.DataFrame(data[0]['time_series'], columns=ch_names, index=data[0]['time_stamps'])    
+    return df
+
+
+def get_stim(xdf_filename):
+    '''
+    Get the stimuli dataframe from the xdf file.
+    
+    Args:
+        xdf_filename (str): The xdf file to get the stimuli from.
+    '''
+    stim, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name':'Stimuli_Markers'}])
+    stim_df = pd.DataFrame(stim[0]['time_series'])
+    stim_df.rename(columns={0: 'trigger'}, inplace=True)
+    events = {
         200: 'Onset_Experiment',
         10: 'Onset_RestingState',
         11: 'Offset_RestingState',
@@ -132,91 +156,6 @@ def get_event_data(event, df, stim_df):
         """
     return df.loc[(df.lsl_time_stamp >= stim_df.loc[stim_df.event == 'Onset_'+event, 'lsl_time_stamp'].values[0]) & 
                   (df.lsl_time_stamp <= stim_df.loc[stim_df.event == 'Offset_'+event, 'lsl_time_stamp'].values[0])]
-
-
-# get durations of certain experiment arm
-def get_durations(ExperimentPart, xdf_path):
-    
-    """
-    Get the durations of each data stream and compare to their expected duration, given an experiment arm.
-    
-    Args:
-        ExperimentPart (str): The part of the experiment to view durations. Can be one of "Experiment", 
-            "RestingState", "StoryListening", "SocialTask", or any one of the stories ('BirthdayParty', 
-            'ZoomClass', 'Tornado', 'FrogDissection', 'DanceContest', 'CampFriend')
-        xdf_path (str): The path to the xdf file.
-    
-    Returns:
-        pd.DataFrame: The durations of each stream in seconds and mm:ss and the percent that that duration 
-            comprised of the length of that experiment arm.
-    """
-
-    et_df = import_et_data(xdf_path)
-    stim_df = import_stim_data(xdf_path)
-    eeg_df = import_eeg_data(xdf_path)
-    mic_df = import_mic_data(xdf_path)
-    cam_df = import_video_data(xdf_path)
-    ps_df = import_physio_data(xdf_path)
-
-    df_map = {
-            'et': et_df,
-            'ps': ps_df,
-            'mic': mic_df,
-            'cam': cam_df,
-            'eeg': eeg_df
-        }
-    streams = list(df_map.keys())
-
-    # find expected duration
-    exp_start = stim_df.loc[stim_df.event == 'Onset_'+ExperimentPart, 'lsl_time_stamp'].values[0]
-    exp_end = stim_df.loc[stim_df.event == 'Offset_'+ExperimentPart, 'lsl_time_stamp'].values[0]
-    exp_dur = round(exp_end - exp_start, 4)
-
-    # expected mm:ss
-    exp_dt = datetime.timedelta(seconds=exp_dur)
-    exp_dt_dur = str(datetime.timedelta(seconds=round(exp_dt.total_seconds())))
-
-    # make + populate df
-    durations_df = pd.DataFrame(columns = ['stream', 'duration', 'mm:ss', 'percent'])
-    for i, stream in enumerate(streams):
-        # don't include mic in resting state
-        if ExperimentPart == 'RestingState' and stream == 'mic':
-            continue
-        # grab data for stream + experiment part
-        event_data = get_event_data(ExperimentPart, df_map[stream], stim_df)
-
-        # print if no data
-        if event_data.empty:
-            durations_df.loc[i] = [stream, 0, str(datetime.timedelta(seconds=0)), '0.00%']
-            print(stream + ' has no ' + ExperimentPart + ' data') 
-            continue
-        # calculate duration
-        start = event_data['lsl_time_stamp'].values[0]
-        stop = event_data['lsl_time_stamp'].values[-1]
-        dur = round(stop - start, 4)
-
-        # calculate hh:mm:ss
-        dt = datetime.timedelta(seconds=dur)
-        dt_dur = str(datetime.timedelta(seconds=round(dt.total_seconds())))
-
-        # calculate percent 
-        percent = '{}%'.format(round(dur/exp_dur * 100, 2))
-             
-        durations_df.loc[i] = [stream, dur, dt_dur, percent]
-
-    # print which are short
-    for i in durations_df.iterrows():
-        if i[1]['duration'] == 0:
-            continue
-        if i[1]['duration'] < (exp_dur - 5): # 5 second margin
-            print(i[1]['stream'] + ' is shorter than expected for ' + ExperimentPart + ' by ' + str(round(exp_dur - i[1]['duration'], 2)) + ' seconds')
-    
-    # print durations_df
-    durations_df.loc[durations_df.index.max() + 1] = ['expected', exp_dur, exp_dt_dur, '100.0%']
-    durations_df.sort_values(by='duration', inplace=True)
-    print('\n' + ExperimentPart + ' DataFrame')
-    return durations_df
-
 
 # allow the functions in this script to be imported into other scripts
 if __name__ == "__main__":
