@@ -2,7 +2,7 @@ import pandas as pd
 import pyxdf
 
 
-def import_eyetracking_data(xdf_filename):
+def import_eyetracking_data(xdf_filename: str):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'ET'}])
     column_labels = [data[0]['info']['desc'][0]['channels'][0]['channel'][i]['label'][0] for i in range(len(data[0]['info']['desc'][0]['channels'][0]['channel']))]
     df = pd.DataFrame(data[0]['time_series'], columns=column_labels)
@@ -14,7 +14,8 @@ def import_eyetracking_data(xdf_filename):
 def import_eeg_data(xdf_filename):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'EEG'}])
     ch_names = [f"E{i+1}" for i in range(data[0]['time_series'].shape[1])]
-    df = pd.DataFrame(data[0]['time_series'], columns=ch_names, index=data[0]['time_stamps'])    
+    df = pd.DataFrame(data[0]['time_series'], columns=ch_names)    
+    df['lsl_time_stamp'] = data[0]['time_stamps']
     return df
 
 
