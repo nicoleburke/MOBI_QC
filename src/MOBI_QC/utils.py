@@ -145,7 +145,7 @@ def get_durations(ExperimentPart, xdf_path):
         pd.DataFrame: The durations of each stream in seconds and mm:ss and the percent that that duration 
             comprised of the length of that experiment arm.
     """
-     et_df, eeg_df... = import_all
+    #  et_df, eeg_df... = import_all
     et_df = import_et_data(xdf_path)
     stim_df = import_stim_data(xdf_path)
     eeg_df = import_eeg_data(xdf_path)
