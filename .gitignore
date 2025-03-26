@@ -162,3 +162,5 @@ cython_debug/
 .idea/
 
 bids_explorer/
+
+MOBI_QC/src/MOBI_QC/test.ipynb
