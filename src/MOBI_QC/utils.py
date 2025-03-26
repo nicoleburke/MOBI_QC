@@ -1,5 +1,8 @@
 import pandas as pd
 import pyxdf
+import tarfile
+from io import BytesIO
+import os
 
 
 def import_eyetracking_data(xdf_filename):
@@ -88,6 +91,21 @@ def get_event_data(event, df, stim_df):
         """
     return df.loc[(df.lsl_time_stamp >= stim_df.loc[stim_df.event == 'Onset_'+event, 'lsl_time_stamp'].values[0]) & 
                   (df.lsl_time_stamp <= stim_df.loc[stim_df.event == 'Offset_'+event, 'lsl_time_stamp'].values[0])]
+
+def load_xdf_from_zip(path_to_zip):  
+    # Path to the tar.gz file
+    tar_gz_file_path = path_to_zip # Path to the tar.gz file
+
+    # Open the tar.gz file
+    with tarfile.open(tar_gz_file_path, 'r:gz') as tar:
+        file_list = tar.getnames() # List all files in the tar.gz
+        file_name = [x for x in file_list if os.path.splitext(x)[1] == '.xdf'][0] # Read a specific file from the tar.gz
+        file = tar.extractfile(file_name)
+        file_content = file.read()
+        data, info = pyxdf.load_xdf(BytesIO(file_content))
+        #streams_collected = [stream['info']['name'][0] for stream in data]        
+        #print(streams_collected)
+    return data, info
 
 # allow the functions in this script to be imported into other scripts
 if __name__ == "__main__":
