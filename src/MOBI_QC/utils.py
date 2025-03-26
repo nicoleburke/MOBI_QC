@@ -14,7 +14,7 @@ def import_eyetracking_data(xdf_filename: str):
 
 
 
-def import_eeg_data(xdf_filename):
+def import_eeg_data(xdf_filename:str):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'EEG'}])
     ch_names = [f"E{i+1}" for i in range(data[0]['time_series'].shape[1])]
     df = pd.DataFrame(data[0]['time_series'], columns=ch_names)    
@@ -107,6 +107,11 @@ def load_xdf_from_zip(path_to_zip):
         #streams_collected = [stream['info']['name'][0] for stream in data]        
         #print(streams_collected)
     return data, info
+
+
+
+# HELP ME GOD PLEASE WHY!?
+
 
 # allow the functions in this script to be imported into other scripts
 if __name__ == "__main__":
