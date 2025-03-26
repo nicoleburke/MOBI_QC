@@ -1,12 +1,14 @@
 import pandas as pd
 import pyxdf
+import tarfile
+from io import BytesIO
+import os
 
 import numpy as np
 import sounddevice as sd
 from glob import glob
 from tqdm import tqdm
 import datetime
-
 
 def import_physio_data(xdf_filename):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'OpenSignals'}])
@@ -128,7 +130,6 @@ def get_event_data(event, df, stim_df):
     return df.loc[(df.lsl_time_stamp >= stim_df.loc[stim_df.event == 'Onset_'+event, 'lsl_time_stamp'].values[0]) & 
                   (df.lsl_time_stamp <= stim_df.loc[stim_df.event == 'Offset_'+event, 'lsl_time_stamp'].values[0])]
 
-
 # get durations of certain experiment arm
 def get_durations(ExperimentPart, xdf_path):
     
@@ -211,8 +212,6 @@ def get_durations(ExperimentPart, xdf_path):
     durations_df.sort_values(by='duration', inplace=True)
     print('\n' + ExperimentPart + ' DataFrame')
     return durations_df
-
-
 
 def load_xdf_from_zip(path_to_zip):  
     # Path to the tar.gz file
