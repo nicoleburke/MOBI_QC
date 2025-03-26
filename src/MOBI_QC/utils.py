@@ -49,7 +49,7 @@ def import_et_data(xdf_filename):
     df['time'] = df.lsl_time_stamp - df.lsl_time_stamp[0]
     return df
 
-def import_eeg_data(xdf_filename):
+def import_eeg_data(xdf_filename:str):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'EEG'}])
     ch_names = [f"E{i+1}" for i in range(data[0]['time_series'].shape[1])]
     df = pd.DataFrame(data[0]['time_series'], columns=ch_names) # index=data[0]['time_stamps']
@@ -211,6 +211,13 @@ def get_durations(ExperimentPart, xdf_path):
     durations_df.sort_values(by='duration', inplace=True)
     print('\n' + ExperimentPart + ' DataFrame')
     return durations_df
+
+
+
+
+# HELP ME GOD PLEASE WHY!?
+
+
 
 
 # allow the functions in this script to be imported into other scripts
