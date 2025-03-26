@@ -214,6 +214,24 @@ def get_durations(ExperimentPart, xdf_path):
 
 
 
+def load_xdf_from_zip(path_to_zip):  
+    # Path to the tar.gz file
+    tar_gz_file_path = path_to_zip # Path to the tar.gz file
+
+    # Open the tar.gz file
+    with tarfile.open(tar_gz_file_path, 'r:gz') as tar:
+        file_list = tar.getnames() # List all files in the tar.gz
+        file_name = [x for x in file_list if os.path.splitext(x)[1] == '.xdf'][0] # Read a specific file from the tar.gz
+        file = tar.extractfile(file_name)
+        file_content = file.read()
+        data, info = pyxdf.load_xdf(BytesIO(file_content))
+        #streams_collected = [stream['info']['name'][0] for stream in data]        
+        #print(streams_collected)
+    return data, info
+# HELP ME GOD PLEASE WHY!?
+
+
+
 
 # HELP ME GOD PLEASE WHY!? AGAIN!?
 
