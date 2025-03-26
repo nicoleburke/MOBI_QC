@@ -49,7 +49,7 @@ def import_et_data(xdf_filename):
     df['time'] = df.lsl_time_stamp - df.lsl_time_stamp[0]
     return df
 
-def import_eeg_data(xdf_filename):
+def import_eeg_data(xdf_filename:str):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'type': 'EEG'}])
     ch_names = [f"E{i+1}" for i in range(data[0]['time_series'].shape[1])]
     df = pd.DataFrame(data[0]['time_series'], columns=ch_names) # index=data[0]['time_stamps']
@@ -211,6 +211,29 @@ def get_durations(ExperimentPart, xdf_path):
     durations_df.sort_values(by='duration', inplace=True)
     print('\n' + ExperimentPart + ' DataFrame')
     return durations_df
+
+
+
+def load_xdf_from_zip(path_to_zip):  
+    # Path to the tar.gz file
+    tar_gz_file_path = path_to_zip # Path to the tar.gz file
+
+    # Open the tar.gz file
+    with tarfile.open(tar_gz_file_path, 'r:gz') as tar:
+        file_list = tar.getnames() # List all files in the tar.gz
+        file_name = [x for x in file_list if os.path.splitext(x)[1] == '.xdf'][0] # Read a specific file from the tar.gz
+        file = tar.extractfile(file_name)
+        file_content = file.read()
+        data, info = pyxdf.load_xdf(BytesIO(file_content))
+        #streams_collected = [stream['info']['name'][0] for stream in data]        
+        #print(streams_collected)
+    return data, info
+# HELP ME GOD PLEASE WHY!?
+
+
+
+
+# HELP ME GOD PLEASE WHY!?
 
 
 # allow the functions in this script to be imported into other scripts
