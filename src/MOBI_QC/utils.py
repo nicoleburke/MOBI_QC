@@ -146,7 +146,7 @@ def get_durations(ExperimentPart, xdf_path):
         pd.DataFrame: The durations of each stream in seconds and mm:ss and the percent that that duration 
             comprised of the length of that experiment arm.
     """
-    #  et_df, eeg_df... = import_all
+    # import all data modalities 
     et_df = import_et_data(xdf_path)
     stim_df = import_stim_data(xdf_path)
     eeg_df = import_eeg_data(xdf_path)
@@ -163,7 +163,7 @@ def get_durations(ExperimentPart, xdf_path):
         }
     streams = list(df_map.keys())
 
-    # find expected duration
+    # find expected duration (stim lsl_time_stamp length of experiment part)
     exp_start = stim_df.loc[stim_df.event == 'Onset_'+ExperimentPart, 'lsl_time_stamp'].values[0]
     exp_end = stim_df.loc[stim_df.event == 'Offset_'+ExperimentPart, 'lsl_time_stamp'].values[0]
     exp_dur = round(exp_end - exp_start, 4)
@@ -172,7 +172,7 @@ def get_durations(ExperimentPart, xdf_path):
     exp_dt = datetime.timedelta(seconds=exp_dur)
     exp_dt_dur = str(datetime.timedelta(seconds=round(exp_dt.total_seconds())))
 
-    # make + populate df
+    # make + populate durations_df
     durations_df = pd.DataFrame(columns = ['stream', 'duration', 'mm:ss', 'percent'])
     for i, stream in enumerate(streams):
         # don't include mic in resting state
@@ -197,7 +197,7 @@ def get_durations(ExperimentPart, xdf_path):
 
         # calculate percent 
         percent = '{}%'.format(round(dur/exp_dur * 100, 2))
-             
+
         durations_df.loc[i] = [stream, dur, dt_dur, percent]
 
     # print which are short
@@ -207,7 +207,7 @@ def get_durations(ExperimentPart, xdf_path):
         if i[1]['duration'] < (exp_dur - 5): # 5 second margin
             print(i[1]['stream'] + ' is shorter than expected for ' + ExperimentPart + ' by ' + str(round(exp_dur - i[1]['duration'], 2)) + ' seconds')
     
-    # print durations_df
+    # print + return durations_df
     durations_df.loc[durations_df.index.max() + 1] = ['expected', exp_dur, exp_dt_dur, '100.0%']
     durations_df.sort_values(by='duration', inplace=True)
     print('\n' + ExperimentPart + ' DataFrame')
