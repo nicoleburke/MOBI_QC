@@ -10,6 +10,26 @@ from glob import glob
 from tqdm import tqdm
 import datetime
 
+
+
+def import_webcam_data(xdf_filename):    
+    cam_data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'WebcamStream'}])
+    frame_nums = [int(i[0]) for i in cam_data[0]['time_series']]
+    time_pre = [float(i[1]) for i in cam_data[0]['time_series']]
+    time_evnt_ms = [float(i[2]) for i in cam_data[0]['time_series']]
+    time_post = [float(i[3]) for i in cam_data[0]['time_series']]
+
+    cam_df = pd.DataFrame({'frame_num': frame_nums, 
+                        'time_pre': time_pre, 
+                        'cap_time_ms': time_evnt_ms,
+                        'time_post': time_post,
+                        'lsl_time_stamp': cam_data[0]['time_stamps']})
+
+    cam_df['frame_time_sec'] = (cam_df.cap_time_ms - cam_df.cap_time_ms[0])/1000
+    cam_df['lsl_time_sec'] = (cam_df.lsl_time_stamp - cam_df.lsl_time_stamp[0]) *1000
+    return cam_df
+
+
 def import_physio_data(xdf_filename):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'OpenSignals'}])
     column_labels = [data[0]['info']['desc'][0]['channels'][0]['channel'][i]['label'][0] for i in range(len(data[0]['info']['desc'][0]['channels'][0]['channel']))]
