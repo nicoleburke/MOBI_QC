@@ -10,6 +10,26 @@ from glob import glob
 from tqdm import tqdm
 import datetime
 
+
+
+def import_webcam_data(xdf_filename):    
+    cam_data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'WebcamStream'}])
+    frame_nums = [int(i[0]) for i in cam_data[0]['time_series']]
+    time_pre = [float(i[1]) for i in cam_data[0]['time_series']]
+    time_evnt_ms = [float(i[2]) for i in cam_data[0]['time_series']]
+    time_post = [float(i[3]) for i in cam_data[0]['time_series']]
+
+    cam_df = pd.DataFrame({'frame_num': frame_nums, 
+                        'time_pre': time_pre, 
+                        'cap_time_ms': time_evnt_ms,
+                        'time_post': time_post,
+                        'lsl_time_stamp': cam_data[0]['time_stamps']})
+
+    cam_df['frame_time_sec'] = (cam_df.cap_time_ms - cam_df.cap_time_ms[0])/1000
+    cam_df['lsl_time_sec'] = (cam_df.lsl_time_stamp - cam_df.lsl_time_stamp[0]) *1000
+    return cam_df
+
+
 def import_physio_data(xdf_filename):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'OpenSignals'}])
     column_labels = [data[0]['info']['desc'][0]['channels'][0]['channel'][i]['label'][0] for i in range(len(data[0]['info']['desc'][0]['channels'][0]['channel']))]
@@ -146,7 +166,7 @@ def get_durations(ExperimentPart, xdf_path):
         pd.DataFrame: The durations of each stream in seconds and mm:ss and the percent that that duration 
             comprised of the length of that experiment arm.
     """
-    #  et_df, eeg_df... = import_all
+    # import_all
     et_df = import_et_data(xdf_path)
     stim_df = import_stim_data(xdf_path)
     eeg_df = import_eeg_data(xdf_path)
@@ -227,13 +247,53 @@ def load_xdf_from_zip(path_to_zip):
         #streams_collected = [stream['info']['name'][0] for stream in data]        
         #print(streams_collected)
     return data, info
-# HELP ME GOD PLEASE WHY!?
 
+def whole_durations(xdf_path):
+    # import_all
+    et_df = import_et_data(xdf_path)
+    stim_df = import_stim_data(xdf_path)
+    eeg_df = import_eeg_data(xdf_path)
+    mic_df = import_mic_data(xdf_path)
+    cam_df = import_video_data(xdf_path)
+    ps_df = import_physio_data(xdf_path)
 
+    df_map = {
+            'et': et_df,
+            'ps': ps_df,
+            'mic': mic_df,
+            'cam': cam_df,
+            'eeg': eeg_df
+        }
 
+    streams = list(df_map.keys())
 
-# HELP ME GOD PLEASE WHY!? AGAIN!?
+    whole_durations_df = pd.DataFrame(columns = ['stream', 'duration', 'mm:ss'])
+  
+    # populate whole_durations_df
+    for i, stream in enumerate(streams):  
+        duration = df_map[stream]['lsl_time_stamp'].iloc[-1]- df_map[stream]['lsl_time_stamp'].iloc[0]
+        duration = round(duration, 4)
+        # convert to mm:ss
+        whole_dt = datetime.timedelta(seconds=duration)
+        whole_dt_dur = str(datetime.timedelta(seconds=round(whole_dt.total_seconds())))
+        whole_durations_df.loc[i] = [stream, duration, whole_dt_dur]
+    
+    whole_durations_df.sort_values(by = 'duration', inplace = True)
 
+    # percent
+    max_dur = whole_durations_df.duration.max()
+    whole_durations_df['percent'] = round(whole_durations_df['duration']/max_dur*100, 2).astype(str) + '%'
+
+    # print which are short
+    for i in whole_durations_df.iterrows():
+        if i[1]['duration'] == 0:
+            continue
+        if i[1]['duration'] < (max_dur - 30): # 30 second margin
+            print(i[1]['stream'] + ' is shorter than expected by ' + str(round(max_dur - i[1]['duration'], 2)) + ' seconds')
+    
+        
+    whole_durations_df.sort_values(by = 'duration', inplace = True)
+    return(whole_durations_df)
 
 
 
