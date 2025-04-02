@@ -209,7 +209,7 @@ def get_durations(ExperimentPart, xdf_path):
         # calculate duration
         start = event_data['lsl_time_stamp'].values[0]
         stop = event_data['lsl_time_stamp'].values[-1]
-        dur = round(stop - start, 4)
+        dur = round(stop - start, 3)
 
         # calculate hh:mm:ss
         dt = datetime.timedelta(seconds=dur)
@@ -272,7 +272,7 @@ def whole_durations(xdf_path):
     # populate whole_durations_df
     for i, stream in enumerate(streams):  
         duration = df_map[stream]['lsl_time_stamp'].iloc[-1]- df_map[stream]['lsl_time_stamp'].iloc[0]
-        duration = round(duration, 4)
+        duration = round(duration, 3)
         # convert to mm:ss
         whole_dt = datetime.timedelta(seconds=duration)
         whole_dt_dur = str(datetime.timedelta(seconds=round(whole_dt.total_seconds())))
@@ -293,7 +293,7 @@ def whole_durations(xdf_path):
     
         
     whole_durations_df.sort_values(by = 'duration', inplace = True)
-    return(whole_durations_df)
+    return(whole_durations_df)# #@#fn# wh##wjfjf
 
 
 
