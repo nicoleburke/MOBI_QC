@@ -165,3 +165,5 @@ cython_debug/
 bids_explorer/
 
 MOBI_QC/src/MOBI_QC/test.ipynb
+MOBI_QC/src/MOBI_QC/ET_hists.ipynb
+MOBI_QC/src/MOBI_QC/ET_hists_resting.ipynb
