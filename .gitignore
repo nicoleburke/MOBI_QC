@@ -164,5 +164,6 @@ cython_debug/
 
 bids_explorer/
 
-MOBI_QC/src/MOBI_QC/test.ipynb.DS_Store
+MOBI_QC/src/MOBI_QC/.DS_Store
 MOBI_QC/src/MOBI_QC/files_to_ignore/
+.DS_Store
