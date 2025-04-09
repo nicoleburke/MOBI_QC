@@ -209,7 +209,7 @@ def get_durations(ExperimentPart, xdf_path):
         # calculate duration
         start = event_data['lsl_time_stamp'].values[0]
         stop = event_data['lsl_time_stamp'].values[-1]
-        dur = round(stop - start, 4)
+        dur = round(stop - start, 3)
 
         # calculate hh:mm:ss
         dt = datetime.timedelta(seconds=dur)
@@ -247,13 +247,53 @@ def load_xdf_from_zip(path_to_zip):
         #streams_collected = [stream['info']['name'][0] for stream in data]        
         #print(streams_collected)
     return data, info
-# HELP ME GOD PLEASE WHY!?
 
+def whole_durations(xdf_path):
+    # import_all
+    et_df = import_et_data(xdf_path)
+    stim_df = import_stim_data(xdf_path)
+    eeg_df = import_eeg_data(xdf_path)
+    mic_df = import_mic_data(xdf_path)
+    cam_df = import_video_data(xdf_path)
+    ps_df = import_physio_data(xdf_path)
 
+    df_map = {
+            'et': et_df,
+            'ps': ps_df,
+            'mic': mic_df,
+            'cam': cam_df,
+            'eeg': eeg_df
+        }
 
+    streams = list(df_map.keys())
 
-# HELP ME GOD PLEASE WHY!? AGAIN!?
+    whole_durations_df = pd.DataFrame(columns = ['stream', 'duration', 'mm:ss'])
+  
+    # populate whole_durations_df
+    for i, stream in enumerate(streams):  
+        duration = df_map[stream]['lsl_time_stamp'].iloc[-1]- df_map[stream]['lsl_time_stamp'].iloc[0]
+        duration = round(duration, 3)
+        # convert to mm:ss
+        whole_dt = datetime.timedelta(seconds=duration)
+        whole_dt_dur = str(datetime.timedelta(seconds=round(whole_dt.total_seconds())))
+        whole_durations_df.loc[i] = [stream, duration, whole_dt_dur]
+    
+    whole_durations_df.sort_values(by = 'duration', inplace = True)
 
+    # percent
+    max_dur = whole_durations_df.duration.max()
+    whole_durations_df['percent'] = round(whole_durations_df['duration']/max_dur*100, 2).astype(str) + '%'
+
+    # print which are short
+    for i in whole_durations_df.iterrows():
+        if i[1]['duration'] == 0:
+            continue
+        if i[1]['duration'] < (max_dur - 30): # 30 second margin
+            print(i[1]['stream'] + ' is shorter than expected by ' + str(round(max_dur - i[1]['duration'], 2)) + ' seconds')
+    
+        
+    whole_durations_df.sort_values(by = 'duration', inplace = True)
+    return(whole_durations_df)# #
 
 
 
