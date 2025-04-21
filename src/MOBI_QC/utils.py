@@ -69,6 +69,7 @@ def import_et_data(xdf_filename):
     df = pd.DataFrame(data[0]['time_series'], columns=column_labels)
     df['lsl_time_stamp'] = data[0]['time_stamps']
     df['time'] = df.lsl_time_stamp - df.lsl_time_stamp[0]
+    df['diff'] = df.lsl_time_stamp.diff()
     return df
 
 def import_eeg_data(xdf_filename:str):
