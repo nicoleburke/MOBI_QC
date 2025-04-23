@@ -12,6 +12,20 @@ import datetime
 
 
 
+def get_collection_date(xdf_filename):
+    """Get the collection date from the xdf file.
+    
+    Args:
+        xdf_filename (str): The xdf file to get the collection date from.
+            
+    Returns:(str): the date and time of the first psychopy timestamp.
+    """
+    stim_df = import_stim_data(xdf_filename)
+    stim_df.loc[stim_df.event == "psychopy_time_stamp", "trigger"].to_list()[0]
+    return datetime.datetime.fromtimestamp(stim_df.loc[stim_df.event == "psychopy_time_stamp", "trigger"].to_list()[0]).strftime('%Y-%m-%d %H:%M:%S')
+
+
+
 def import_webcam_data(xdf_filename):    
     cam_data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'WebcamStream'}])
     frame_nums = [int(i[0]) for i in cam_data[0]['time_series']]
@@ -77,7 +91,7 @@ def import_eeg_data(xdf_filename:str):
     ch_names = [f"E{i+1}" for i in range(data[0]['time_series'].shape[1])]
     df = pd.DataFrame(data[0]['time_series'], columns=ch_names) # index=data[0]['time_stamps']
     df['lsl_time_stamp'] = data[0]['time_stamps']
-    df['time'] = df.lsl_time_stamp - df.lsl_time_stamp[0]
+    #df['time'] = df.lsl_time_stamp - df.lsl_time_stamp[0]
     return df
 
 def import_stim_data(xdf_filename):
