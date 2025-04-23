@@ -9,6 +9,7 @@ packages = [{include = "MOBI_QC", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"
+pandas = "^2.2.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
