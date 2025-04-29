@@ -13,21 +13,18 @@ from glob import glob
 import neurokit2 as nk
 from scipy.signal import butter, filtfilt
 
-
-xdf_filename = '/Users/apurva.gokhe/Documents/CUNY_QC/data/sub-P5029423/sub-P5029423_ses-S001_task-CUNY_run-001_mobi.xdf'
-subject = xdf_filename.split('-')[1].split('/')[0]
-ps_df = get_event_data(event='Experiment',
+def get_modality(xdf_filename):
+    #xdf_filename = '/Users/apurva.gokhe/Documents/CUNY_QC/data/sub-P5029423/sub-P5029423_ses-S001_task-CUNY_run-001_mobi.xdf'
+    subject = xdf_filename.split('-')[1].split('/')[0]
+    ps_df = get_event_data(event='RestingState',
                     df=import_physio_data(xdf_filename),
                     stim_df=import_stim_data(xdf_filename))
-
-eda_df = ps_df[['EDA2', 'lsl_time_stamp', 'time']]
+    eda_df = ps_df[['EDA2', 'lsl_time_stamp', 'time']]
+    return eda_df, subject
 
 def eda_sampling_rate(eda_df):
     effective_sampling_rate = 1 / (eda_df.lsl_time_stamp.diff().mean())
     return effective_sampling_rate
-
-# Preprocess EDA signal
-eda_signals, info = nk.eda_process(eda_df['EDA2'], sampling_rate=eda_sampling_rate(eda_df), method='neurokit')
 
 # Checking for nan or missing values in EDA data and return a percentage validity
 def eda_signal_integrity_check(eda_df):
@@ -39,6 +36,7 @@ def eda_signal_integrity_check(eda_df):
     eda_validity = 100 - (count_nan/len(eda_df['EDA2'])) * 100
     return eda_validity
 
+# Preprocess EDA signal
 def eda_preprocess(eda_df):
     # Preprocess EDA signal
     eda_signals, info = nk.eda_process(eda_df['EDA2'], sampling_rate=eda_sampling_rate(eda_df), method='neurokit')
@@ -52,7 +50,7 @@ def scl_stability(scl):
     scl_cv = (scl_sd / average_scl) * 100
     return average_scl, scl_sd, scl_cv
 
-def scl_trend_analysis(eda_signals):
+def scl_trend_analysis(eda_signals, eda_df, subject):
 
     # Calculating rolling mean of SCL and slope of rolling mean of SCL over time
 
@@ -98,7 +96,7 @@ def scr_amplitudes(info):
 
     return average_scr_amplitude, scr_amplitude_validity
 
-def eda_snr(eda_df):
+def eda_snr(eda_signals, eda_df):
     duration = len(eda_df['EDA2'].tolist()) / eda_sampling_rate(eda_df)
     t = np.linspace(0, duration , len(eda_df['EDA2']))
     t = t[:5000]
@@ -124,7 +122,7 @@ def eda_snr(eda_df):
     return snr
 
 
-def eda_report_plot(eda_signals, info):
+def eda_report_plot(eda_signals, info, subject):
     fig = nk.eda_plot(eda_signals, info)
     fig = plt.gcf()
     axes = fig.get_axes()
