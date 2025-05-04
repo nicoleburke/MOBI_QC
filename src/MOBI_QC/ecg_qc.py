@@ -13,45 +13,65 @@ from glob import glob
 import neurokit2 as nk
 from neurokit2.signal import signal_power
 
-def get_modality(xdf_filename):
-    #xdf_filename = '/Users/apurva.gokhe/Documents/CUNY_QC/data/sub-P5029423/sub-P5029423_ses-S001_task-CUNY_run-001_mobi.xdf'
-    subject = xdf_filename.split('-')[1].split('/')[0]
-    ps_df = get_event_data(event='RestingState',
-                    df=import_physio_data(xdf_filename),
-                    stim_df=import_stim_data(xdf_filename))
-    ecg_df = ps_df[['ECG1', 'lsl_time_stamp', 'time']]
-    return ecg_df, subject
-
-def ecg_sampling_rate(ecg_df):
-    effective_sampling_rate = 1 / (ecg_df.lsl_time_stamp.diff().mean())
-    return effective_sampling_rate
-
-def ecg_preprocess(ecg_df):
-    ecg_signals, info = nk.ecg_process(ecg_df['ECG1'], sampling_rate=ecg_sampling_rate(ecg_df), method='neurokit')
+def ecg_preprocess(ecg_df: pd.DataFrame, ecg_sampling_rate: float) -> tuple[pd.DataFrame,dict]:
+    """
+    Preprocesses ECG data using NeuroKit2.
+    Args:
+        ecg_df (pd.DataFrame): DataFrame containing ECG data.
+        ecg_sampling_rate (float): Sampling rate of the ECG data.
+    Returns:
+        ecg_signals (pd.DataFrame): Processed ECG signals.
+        info (dict): Additional information about the ECG processing.
+    """
+    ecg_signals, info = nk.ecg_process(ecg_df['ECG1'], sampling_rate=ecg_sampling_rate, method='neurokit')
     return ecg_signals, info
 
-def average_heartrate(ecg_signals):
+def average_heartrate(ecg_signals: pd.DataFrame) -> float:
+    """
+    Calculates the average heart rate from processed ECG signals.
+    Args:
+        ecg_signals (pd.DataFrame): Processed ECG signals.
+    Returns:
+        avg_heartrate (float): Average heart rate in beats per minute.
+    """
     avg_heartrate = sum(ecg_signals['ECG_Rate'])/len(ecg_signals['ECG_Rate'])
     return avg_heartrate
 
-def ecg_quality_kurtosis_SQI(ecg_cleaned, method="fisher"):
-    """Return the kurtosis of the signal, with Fisher's or Pearson's method."""
-
+def ecg_quality_kurtosis_SQI(ecg_cleaned, method="fisher") -> float:
+    """
+    Computes the kurtosis of the cleaned ECG signal for quality assessment.
+    Args:
+        ecg_cleaned (pd.Series): Cleaned ECG signal.
+        method (str): Method for kurtosis calculation ("fisher" or "pearson").
+    Returns:
+        kurtosis (float): Kurtosis value of the ECG signal.
+        Return the kurtosis of the signal, with Fisher's or Pearson's method.
+    """
     if method == "fisher":
-        return scipy.stats.kurtosis(ecg_cleaned, fisher=True)
+        kurtosis = float(scipy.stats.kurtosis(ecg_cleaned, fisher=True))
     elif method == "pearson":
-        return scipy.stats.kurtosis(ecg_cleaned, fisher=False)
+        kurtosis = float(scipy.stats.kurtosis(ecg_cleaned, fisher=False))
+    return kurtosis
 
 def ecg_quality_psd_SQI(
-    ecg_cleaned,
-    sampling_rate,
+    ecg_cleaned: pd.Series,
+    sampling_rate: float,
     window=1024,
     num_spectrum=[5, 15],
     dem_spectrum=[5, 40],
     **kwargs
-):
-    """Power Spectrum Distribution of QRS Wave."""
-
+) -> float:
+    """
+    Computes the Power Spectrum Distribution (PSD) of the QRS wave.
+    Args:
+        ecg_cleaned (pd.Series): Cleaned ECG signal.
+        sampling_rate (float): Sampling rate of the ECG data.
+        window (int): Window size for Welch's method.
+        num_spectrum (list): Frequency band for numerator.
+        dem_spectrum (list): Frequency band for denominator.
+    Returns:
+        power_spectrum_distribution (float): PSD ratio for quality assessment.
+    """
     psd = signal_power(
         ecg_cleaned,
         sampling_rate=sampling_rate,
@@ -64,18 +84,29 @@ def ecg_quality_psd_SQI(
 
     num_power = psd.iloc[0, 0]
     dem_power = psd.iloc[0, 1]
+    power_spectrum_distribution = float(num_power / dem_power) 
 
-    return num_power / dem_power
+    return power_spectrum_distribution
 
 def ecg_quality_baseline_power_SQI(
-    ecg_cleaned,
-    sampling_rate,
+    ecg_cleaned: pd.Series,
+    sampling_rate: float,
     window=1024,
     num_spectrum=[0, 1],
     dem_spectrum=[0, 40],
     **kwargs
-):
-    """Relative Power in the Baseline."""
+) -> float:
+    """
+    Computes the relative power in the baseline of the ECG signal.
+    Args:
+        ecg_cleaned (pd.Series): Cleaned ECG signal.
+        sampling_rate (float): Sampling rate of the ECG data.
+        window (int): Window size for Welch's method.
+        num_spectrum (list): Frequency band for numerator.
+        dem_spectrum (list): Frequency band for denominator.
+    Returns:
+        relative_baseline_power (float): Relative baseline power for quality assessment.
+    """
     psd = signal_power(
         ecg_cleaned,
         sampling_rate=sampling_rate,
@@ -88,30 +119,41 @@ def ecg_quality_baseline_power_SQI(
 
     num_power = psd.iloc[0, 0]
     dem_power = psd.iloc[0, 1]
+    relative_baseline_power = float((1 - num_power) / dem_power)
+    return relative_baseline_power
 
-    return (1 - num_power) / dem_power
-
-def ecg_snr(ecg_signals, ecg_df):
-    duration = len(ecg_df['ECG1'].tolist()) / ecg_sampling_rate(ecg_df)
-    t = np.linspace(0, duration , len(ecg_df['ECG1']))
+def ecg_snr(ecg_signals: pd.DataFrame, ecg_sampling_rate: float) -> float:
+    """
+    Calculates the Signal-to-Noise Ratio (SNR) of the ECG signal.
+    Args:
+        ecg_signals (pd.DataFrame): Processed ECG signals.
+        ecg_sampling_rate (float): Sampling rate of the ECG data.
+    Returns:
+        snr (float): Signal-to-Noise Ratio in decibels (dB).
+    """
+    duration = len(ecg_signals['ECG_Raw'].tolist()) / ecg_sampling_rate
+    t = np.linspace(0, duration , len(ecg_signals['ECG_Raw']))
     t = t[:5000]
-
-    # Clean ECG from ecg_signals dataframe
     ecg_cleaned = ecg_signals['ECG_Clean'] 
-
-    # Calculate signal power (variance of the cleaned ECG signal)
     signal_power = np.var(ecg_cleaned)
 
-    # Estimate noise power (using residual noise after subtracting cleaned signal from raw noisy signal)
     noise_signal = ecg_signals['ECG_Raw'] - ecg_cleaned  # residual noise
     noise_power = np.var(noise_signal)
-
     # Calculate SNR (Signal-to-Noise Ratio in dB)
-    snr = 10 * np.log10(signal_power / noise_power)
+    snr = float(10 * np.log10(signal_power / noise_power))
 
     return snr
 
-def ecg_report_plot(ecg_signals, info, subject):
+def ecg_report_plot(ecg_signals:pd.DataFrame, info: dict, subject:str) -> matplotlib.pyplot:
+    """
+    Generates and saves a report plot for the ECG signals.
+    Args:
+        ecg_signals (pd.DataFrame): Processed ECG signals.
+        info (dict): Additional information about the ECG processing.
+        subject (str): Subject identifier for saving the plot.
+    Returns:
+        plt (matplotlib.pyplot): The generated plot.
+    """
     nk.ecg_plot(ecg_signals, info)
     fig = plt.gcf()
     axes = fig.get_axes()
@@ -137,5 +179,45 @@ def ecg_report_plot(ecg_signals, info, subject):
 
     return plt
 
+def ecg_qc(xdf_filename:str) -> tuple[dict,matplotlib.pyplot]:
+    """
+    Performs quality control on ECG data from an XDF file.
+    Args:
+        xdf_filename (str): Path to the XDF file.
+    Returns:
+        vars (dict): Quality control metrics for the ECG data.
+        fig (matplotlib.pyplot): Generated ECG report plot.
+    """
+    subject = xdf_filename.split('-')[1].split('/')[0]
+    ps_df = get_event_data(event='RestingState',
+                    df=import_physio_data(xdf_filename),
+                    stim_df=import_stim_data(xdf_filename))
+    ecg_df = ps_df[['ECG1', 'lsl_time_stamp', 'time']]
+
+    ecg_sampling_rate = get_sampling_rate(ecg_df)  
+    ecg_signals, info = ecg_preprocess(ecg_df, ecg_sampling_rate)
+    ecg_cleaned = ecg_signals['ECG_Clean']
+
+    vars = {}
+    print(f"Effective sampling rate: {ecg_sampling_rate}")
+    vars['sampling_rate'] = ecg_sampling_rate
+    print(f"Average heart rate: {average_heartrate(ecg_signals)}")
+    vars['average_heart_rate'] = average_heartrate(ecg_signals)
+    print(f"Kurtosis signal quality index: {ecg_quality_kurtosis_SQI(ecg_cleaned)}")
+    vars['kurtosis_SQI'] = ecg_quality_kurtosis_SQI(ecg_cleaned)
+    print(f"Power spectrum distribution signal quality index: {ecg_quality_psd_SQI(ecg_cleaned, ecg_sampling_rate)}")
+    vars['power_spectrum_distribution_SQI'] = ecg_quality_psd_SQI(ecg_cleaned, ecg_sampling_rate)
+    print(f"Relative power in baseline signal quality index: {ecg_quality_baseline_power_SQI(ecg_cleaned, ecg_sampling_rate)}")
+    vars['relative_baseline_power_sqi'] = ecg_quality_baseline_power_SQI(ecg_cleaned, ecg_sampling_rate)
+    print(f"Signal to Noise Ratio: {ecg_snr(ecg_signals, ecg_sampling_rate)}")
+    vars['SNR'] = ecg_snr(ecg_signals, ecg_sampling_rate)
+
+    fig = ecg_report_plot(ecg_signals, info, subject)
+
+    return vars, fig
+#%% 
+# allow the functions in this script to be imported into other scripts
 if __name__ == "__main__":
     pass
+
+# %%

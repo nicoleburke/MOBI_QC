@@ -310,7 +310,9 @@ def whole_durations(xdf_path):
     whole_durations_df.sort_values(by = 'duration', inplace = True)
     return(whole_durations_df)# #
 
-
+def get_sampling_rate(df):
+    effective_sampling_rate = 1 / (df.lsl_time_stamp.diff().mean())
+    return effective_sampling_rate
 
 # allow the functions in this script to be imported into other scripts
 if __name__ == "__main__":
