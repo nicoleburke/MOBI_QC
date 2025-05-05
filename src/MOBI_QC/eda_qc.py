@@ -13,21 +13,15 @@ from glob import glob
 import neurokit2 as nk
 from scipy.signal import butter, filtfilt
 
-def get_modality(xdf_filename):
-    #xdf_filename = '/Users/apurva.gokhe/Documents/CUNY_QC/data/sub-P5029423/sub-P5029423_ses-S001_task-CUNY_run-001_mobi.xdf'
-    subject = xdf_filename.split('-')[1].split('/')[0]
-    ps_df = get_event_data(event='RestingState',
-                    df=import_physio_data(xdf_filename),
-                    stim_df=import_stim_data(xdf_filename))
-    eda_df = ps_df[['EDA2', 'lsl_time_stamp', 'time']]
-    return eda_df, subject
-
-def eda_sampling_rate(eda_df):
-    effective_sampling_rate = 1 / (eda_df.lsl_time_stamp.diff().mean())
-    return effective_sampling_rate
-
 # Checking for nan or missing values in EDA data and return a percentage validity
-def eda_signal_integrity_check(eda_df):
+def eda_signal_integrity_check(eda_df: pd.DataFrame) -> float:
+    """
+    Checks for missing values in EDA data and calculates the percentage of valid data.
+    Args:
+        eda_df (pd.DataFrame): DataFrame containing EDA data.
+    Returns:
+        eda_validity (float): Percentage of valid EDA data.
+    """
     count_nan = 0
     for x in eda_df['EDA2']:
         if np.isnan(x) == True:
@@ -35,27 +29,46 @@ def eda_signal_integrity_check(eda_df):
 
     eda_validity = 100 - (count_nan/len(eda_df['EDA2'])) * 100
     return eda_validity
-
 # Preprocess EDA signal
-def eda_preprocess(eda_df):
-    # Preprocess EDA signal
-    eda_signals, info = nk.eda_process(eda_df['EDA2'], sampling_rate=eda_sampling_rate(eda_df), method='neurokit')
+def eda_preprocess(eda_df: pd.DataFrame, eda_sampling_rate: float) -> tuple[pd.DataFrame, dict]:
+    """
+    Preprocesses the EDA signal using NeuroKit2.
+    Args:
+        eda_df (pd.DataFrame): DataFrame containing EDA data.
+        eda_sampling_rate (float): Sampling rate of the EDA data.
+    Returns:
+        eda_signals (pd.DataFrame): Processed EDA signals.
+        info (dict): Additional information about the EDA processing.
+    """
+    eda_signals, info = nk.eda_process(eda_df['EDA2'], sampling_rate=eda_sampling_rate, method='neurokit')
     return eda_signals, info
 
-def scl_stability(scl):
-    # Calculating average, standard deviation and coefficient of variation
-
+def scl_stability(scl: pd.Series) -> tuple[float,float,float]:
+    """
+    Calculates the average, standard deviation, and coefficient of variation of SCL.
+    Args:
+        scl (pd.Series): Skin Conductance Level (SCL) data.
+    Returns:
+        average_scl (float): Average SCL.
+        scl_sd (float): Standard deviation of SCL.
+        scl_cv (float): Coefficient of variation of SCL.
+    """
     average_scl = np.mean(scl)
     scl_sd = np.std(scl)
     scl_cv = (scl_sd / average_scl) * 100
     return average_scl, scl_sd, scl_cv
 
-def scl_trend_analysis(eda_signals, eda_df, subject):
-
-    # Calculating rolling mean of SCL and slope of rolling mean of SCL over time
-
-    # Calculating slope of SCL over time
-
+def scl_trend_analysis(eda_signals: pd.DataFrame, eda_df: pd.DataFrame, eda_sampling_rate: float, subject: str) -> matplotlib.pyplot:
+    """
+    Analyzes the trend of SCL by calculating slopes and rolling means, and generates a plot.
+    Args:
+        eda_signals (pd.DataFrame): Processed EDA signals.
+        eda_df (pd.DataFrame): Original EDA data.
+        eda_sampling_rate (float): Sampling rate of the EDA data.
+        subject (str): Subject identifier for saving the plot.
+    Returns:
+        plt (matplotlib.pyplot): The generated plot.
+    """
     scl_df = pd.DataFrame(eda_signals['EDA_Tonic'])
     scl_df['lsl_time_stamp'] = eda_df['lsl_time_stamp']
 
@@ -63,7 +76,7 @@ def scl_trend_analysis(eda_signals, eda_df, subject):
     scl_df['EDA_Tonic_Slope'] = np.gradient(scl_df['EDA_Tonic'], eda_df['lsl_time_stamp'])
     
     # Calculating rolling mean of SCL and Slope of SCL rolling mean
-    rolling_mean = pd.Series(eda_signals['EDA_Tonic']).rolling(window=(int)(eda_sampling_rate(eda_df)), center=True).mean()
+    rolling_mean = pd.Series(eda_signals['EDA_Tonic']).rolling(window=(int)(eda_sampling_rate), center=True).mean()
     slope_rolling_mean = np.gradient(rolling_mean)
     
     plt.figure(figsize=(20,5))
@@ -79,12 +92,18 @@ def scl_trend_analysis(eda_signals, eda_df, subject):
 
     return plt
 
-def scr_amplitudes(info):
-    # Calculating average amplitude of SCRs
+def scr_amplitudes(info: dict) -> tuple[float, float]:
+    """
+    Calculates the average amplitude of SCRs and their validity percentage.
+    Args:
+        info (dict): Additional information about the EDA processing.
+    Returns:
+        average_scr_amplitude (float): Average amplitude of SCRs.
+        scr_amplitude_validity (float): Percentage of valid SCR amplitudes.
+    """
     scr_amplitudes = [amplitude for amplitude in info['SCR_Amplitude'] if np.isnan(amplitude) != True]
     average_scr_amplitude = np.mean(scr_amplitudes)
 
-    # Calculating SCR amplitude Validity
     count_invalid_scr = 0
     for amplitude in scr_amplitudes:
         if amplitude > 0.01 and amplitude < 3.0:
@@ -96,33 +115,38 @@ def scr_amplitudes(info):
 
     return average_scr_amplitude, scr_amplitude_validity
 
-def eda_snr(eda_signals, eda_df):
-    duration = len(eda_df['EDA2'].tolist()) / eda_sampling_rate(eda_df)
+def eda_snr(eda_signals: pd.DataFrame, eda_df: pd.DataFrame, eda_sampling_rate: float) -> float:
+    """
+    Calculates the Signal-to-Noise Ratio (SNR) of the EDA signal.
+    Args:
+        eda_signals (pd.DataFrame): Processed EDA signals.
+        eda_df (pd.DataFrame): Original EDA data.
+        eda_sampling_rate (float): Sampling rate of the EDA data.
+    Returns:
+        snr (float): Signal-to-Noise Ratio in decibels (dB).
+    """
+    duration = len(eda_df['EDA2'].tolist()) / eda_sampling_rate
     t = np.linspace(0, duration , len(eda_df['EDA2']))
     t = t[:5000]
 
-    # Clean ECG from ecg_signals dataframe
     eda_cleaned = eda_signals['EDA_Clean']
-
-    # Calculate signal power (variance of the cleaned ECG signal)
     signal_power = np.var(eda_cleaned)
-
-    # Estimate noise power (using residual noise after subtracting cleaned signal from raw noisy signal)
-    noise_signal = eda_signals['EDA_Raw'] - eda_cleaned  # residual noise
+    noise_signal = eda_signals['EDA_Raw'] - eda_cleaned  
     noise_power = np.var(noise_signal)
 
-    # Calculate SNR (Signal-to-Noise Ratio in dB)
     snr = 10 * np.log10(signal_power / noise_power)
-
-    # Output the results
-    print(f"Signal Power: {signal_power}")
-    print(f"Noise Power: {noise_power}")
-    print(f"SNR: {snr} dB")
-
     return snr
 
-
-def eda_report_plot(eda_signals, info, subject):
+def eda_report_plot(eda_signals: pd.DataFrame, info: dict, subject: str) -> matplotlib.pyplot:
+    """
+    Generates and saves a report plot for the EDA signals.
+    Args:
+        eda_signals (pd.DataFrame): Processed EDA signals.
+        info (dict): Additional information about the EDA processing.
+        subject (str): Subject identifier for saving the plot.
+    Returns:
+        plt (matplotlib.pyplot): The generated plot.
+    """
     fig = nk.eda_plot(eda_signals, info)
     fig = plt.gcf()
     axes = fig.get_axes()
@@ -142,5 +166,53 @@ def eda_report_plot(eda_signals, info, subject):
 
     return plt
 
+def eda_qc(xdf_filename: str) -> tuple[dict, matplotlib.pyplot, matplotlib.pyplot]:
+    """
+    Performs quality control on EDA data from an XDF file.
+    Args:
+        xdf_filename (str): Path to the XDF file.
+    Returns:
+        vars (dict): Quality control metrics for the EDA data.
+        eda_slope_fig (matplotlib.pyplot): SCL trend analysis plot.
+        eda_report_fig (matplotlib.pyplot): EDA report plot.
+    """
+    subject = xdf_filename.split('-')[1].split('/')[0]
+    ps_df = get_event_data(event='RestingState',
+                    df=import_physio_data(xdf_filename),
+                    stim_df=import_stim_data(xdf_filename))
+    eda_df = ps_df[['EDA2', 'lsl_time_stamp', 'time']]
+
+    eda_sampling_rate = get_sampling_rate(eda_df)
+    print(eda_sampling_rate)
+    eda_signals, info = eda_preprocess(eda_df, eda_sampling_rate)
+    average_scl, scl_sd, scl_cv = scl_stability(eda_signals['EDA_Tonic'])
+    average_scr_amplitude, scr_amplitude_validity = scr_amplitudes(info)
+    
+    vars = {}
+    print(f"Effective sampling rate: {eda_sampling_rate}")
+    vars['sampling_rate'] = eda_sampling_rate
+    print(f"Signal Integrity Check: {eda_signal_integrity_check(eda_df)}")
+    vars['signal_integrity_check'] = eda_signal_integrity_check(eda_df)
+    print(f"Average Skin Conductance Level: {average_scl}")
+    vars['average_scl'] = average_scl
+    print(f"Skin Conductance Level Standard deviation: {scl_sd}")
+    vars['scl_sd'] = scl_sd
+    print(f"Skin Conductance Level Coefficient of Variation: {scl_cv}")
+    vars['scl_cv'] = scl_cv
+    print(f"Average Amplitude of Skin Conductance Response: {average_scr_amplitude}")
+    vars['average_scr_amplitude'] = average_scr_amplitude
+    print(f"Skin Conductance Response Validity: {scr_amplitude_validity}")
+    vars['sc_validity'] = scr_amplitude_validity
+    print(f"Signal to Noise Ratio: {eda_snr(eda_signals, eda_df, eda_sampling_rate)}")
+    vars['snr'] = eda_snr(eda_signals, eda_df, eda_sampling_rate)
+
+    eda_slope_fig = scl_trend_analysis(eda_signals, eda_df, eda_sampling_rate, subject)
+    eda_report_fig = eda_report_plot(eda_signals, info, subject)
+    
+    return vars, eda_slope_fig, eda_report_fig
+#%%
+
 if __name__ == "__main__":
     pass
+
+# %%
