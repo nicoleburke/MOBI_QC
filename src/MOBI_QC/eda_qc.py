@@ -58,7 +58,7 @@ def scl_stability(scl: pd.Series) -> tuple[float,float,float]:
     scl_cv = (scl_sd / average_scl) * 100
     return average_scl, scl_sd, scl_cv
 
-def scl_trend_analysis(eda_signals: pd.DataFrame, eda_df: pd.DataFrame, eda_sampling_rate: float, subject: str) -> matplotlib.pyplot:
+def scl_trend_analysis(eda_signals: pd.DataFrame, eda_df: pd.DataFrame, eda_sampling_rate: float, subject: str) -> plt:
     """
     Analyzes the trend of SCL by calculating slopes and rolling means, and generates a plot.
     Args:
@@ -137,7 +137,7 @@ def eda_snr(eda_signals: pd.DataFrame, eda_df: pd.DataFrame, eda_sampling_rate: 
     snr = 10 * np.log10(signal_power / noise_power)
     return snr
 
-def eda_report_plot(eda_signals: pd.DataFrame, info: dict, subject: str) -> matplotlib.pyplot:
+def eda_report_plot(eda_signals: pd.DataFrame, info: dict, subject: str) -> plt:
     """
     Generates and saves a report plot for the EDA signals.
     Args:
@@ -166,7 +166,7 @@ def eda_report_plot(eda_signals: pd.DataFrame, info: dict, subject: str) -> matp
 
     return plt
 
-def eda_qc(xdf_filename: str) -> tuple[dict, matplotlib.pyplot, matplotlib.pyplot]:
+def eda_qc(xdf_filename: str) -> tuple[dict, plt, plt]:
     """
     Performs quality control on EDA data from an XDF file.
     Args:
@@ -216,3 +216,6 @@ if __name__ == "__main__":
     pass
 
 # %%
+# allow the functions in this script to be imported into other scripts
+if __name__ == "__main__":
+    pass

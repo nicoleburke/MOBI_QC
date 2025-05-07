@@ -127,7 +127,6 @@ def ecg_snr(ecg_signals: pd.DataFrame, ecg_sampling_rate: float) -> float:
     Calculates the Signal-to-Noise Ratio (SNR) of the ECG signal.
     Args:
         ecg_signals (pd.DataFrame): Processed ECG signals.
-        ecg_sampling_rate (float): Sampling rate of the ECG data.
     Returns:
         snr (float): Signal-to-Noise Ratio in decibels (dB).
     """
@@ -144,7 +143,7 @@ def ecg_snr(ecg_signals: pd.DataFrame, ecg_sampling_rate: float) -> float:
 
     return snr
 
-def ecg_report_plot(ecg_signals:pd.DataFrame, info: dict, subject:str) -> matplotlib.pyplot:
+def ecg_report_plot(ecg_signals:pd.DataFrame, info: dict, subject:str) -> plt:
     """
     Generates and saves a report plot for the ECG signals.
     Args:
@@ -179,7 +178,7 @@ def ecg_report_plot(ecg_signals:pd.DataFrame, info: dict, subject:str) -> matplo
 
     return plt
 
-def ecg_qc(xdf_filename:str) -> tuple[dict,matplotlib.pyplot]:
+def ecg_qc(xdf_filename:str) -> tuple[dict, plt]:
     """
     Performs quality control on ECG data from an XDF file.
     Args:
@@ -221,3 +220,6 @@ if __name__ == "__main__":
     pass
 
 # %%
+# allow the functions in this script to be imported into other scripts
+if __name__ == "__main__":
+    pass

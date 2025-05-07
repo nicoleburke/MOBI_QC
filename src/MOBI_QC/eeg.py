@@ -101,13 +101,13 @@ def compute_eeg_pipeline(xdf_filename):
     
         return muscle_annotations
     
+    
+    # Applying a high pass filter to remove low frequency noise
+    raw_cleaned.filter(l_freq=0.5, h_freq=None)
     fig = raw_cleaned.plot(show_scrollbars=False,
                         show_scalebars=False,events=None, start=0, duration=300,n_channels=75, scalings=11e-5,color='k')
     fig.grab().save(f'report_images/{subject}_eeg_annotations.png')
     
-    # Applying a high pass filter to remove low frequency noise
-    raw_cleaned.filter(l_freq=0.5, h_freq=None)
-
     blink_annotations = annotate_blinks(raw_cleaned, ch_name=["E25", "E8"])
 
     muscle_annotations = annotate_muscle(raw_cleaned)
@@ -149,7 +149,7 @@ def compute_eeg_pipeline(xdf_filename):
     eog_projs, _ = mne.preprocessing.compute_proj_eog(raw_cleaned, n_eeg=1, reject=None, no_proj=True,
                                                     ch_name=['E8', 'E25'])
 
-    return vars, raw_cleaned
+    return vars
 
 
 def test_eeg_pipeline(xdf_filename):
