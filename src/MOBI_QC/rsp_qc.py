@@ -133,7 +133,6 @@ def rsp_qc(xdf_filename:str) -> dict:
     # load data 
     sub_id = xdf_filename.split('-')[1].split('/')[0]
     ps_df = import_physio_data(xdf_filename)
-    stim_df = import_stim_data(xdf_filename)
 
     # get rsp data
     rsp_df = ps_df[['RESPIRATION0', 'lsl_time_stamp']].rename(columns={'RESPIRATION0': 'respiration'})
