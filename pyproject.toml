@@ -67,6 +67,7 @@ pyprep = "^0.4.3"
 neurokit2 = "^0.2.10"
 seaborn = "^0.13.2"
 pyxdf = "^1.17.0"
+librosa = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
