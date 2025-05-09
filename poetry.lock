@@ -1868,6 +1868,20 @@ files = [
 ]
 
 [[package]]
+name = "pyxdf"
+version = "1.17.0"
+description = "Python library for importing XDF (Extensible Data Format)"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pyxdf-1.17.0-py3-none-any.whl", hash = "sha256:a651ab64283e05b4ea98e403aeb6b695e83902d2a1f3c43fa80f9679c91f023f"},
+    {file = "pyxdf-1.17.0.tar.gz", hash = "sha256:9980c5506945632fcb27cca899e4db12b156d70fc31c703d3fdb2f0870dbaee9"},
+]
+
+[package.dependencies]
+numpy = ">=2.0.2"
+
+[[package]]
 name = "pyyaml"
 version = "6.0.2"
 description = "YAML parser and emitter for Python"
@@ -2432,4 +2446,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "ab312e2fbb925f938023127d06a00454d57d277c96b9f69ad95dbc66562ed34b"
+content-hash = "9be1659ff68336c8162c13990ba9f378d5d92179a75335928e80782f12d3670e"
