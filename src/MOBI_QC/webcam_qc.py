@@ -138,7 +138,7 @@ def plot_frames_with_wrap(frames, highlight_indices=[], overlap_ratio=0.3, frame
 
 
 
-def webcam_qc(xdf_file:str, video_file:str, task:str):
+def webcam_qc(xdf_filename:str, video_file:str, task:str):
     cam_df = import_webcam_data(xdf_filename)
     stim_df = import_stim_data(xdf_filename)
 
@@ -178,3 +178,11 @@ def webcam_qc(xdf_file:str, video_file:str, task:str):
     highlight_indices = [frame_indices.index(xx)  for xx in [x for x in frames_without_faces if x in frame_indices]] # Indices of frames to be highlighted in red
     frames = extract_frames(vid_path, frame_indices, resize_scale=0.35)
     canvas = plot_frames_with_wrap(frames, highlight_indices=highlight_indices, overlap_ratio=0.3, frames_per_row=30)
+    # same the canvas
+    plt.imsave('report_images/webcam_qc.png', canvas)
+    return vars
+
+
+# allow the functions in this script to be imported into other scripts
+if __name__ == "__main__":
+    pass
