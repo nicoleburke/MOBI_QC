@@ -183,27 +183,26 @@ def eda_qc(xdf_filename: str) -> tuple[dict, plt, plt]:
     eda_df = ps_df[['EDA2', 'lsl_time_stamp', 'time']]
 
     eda_sampling_rate = get_sampling_rate(eda_df)
-    print(eda_sampling_rate)
     eda_signals, info = eda_preprocess(eda_df, eda_sampling_rate)
     average_scl, scl_sd, scl_cv = scl_stability(eda_signals['EDA_Tonic'])
     average_scr_amplitude, scr_amplitude_validity = scr_amplitudes(info)
     
     vars = {}
-    print(f"Effective sampling rate: {eda_sampling_rate}")
+    print(f"Effective sampling rate: {eda_sampling_rate:.3f} Hz")
     vars['sampling_rate'] = eda_sampling_rate
-    print(f"Signal Integrity Check: {eda_signal_integrity_check(eda_df)}")
+    print(f"Signal Integrity Check: {eda_signal_integrity_check(eda_df):.3f} %")
     vars['signal_integrity_check'] = eda_signal_integrity_check(eda_df)
-    print(f"Average Skin Conductance Level: {average_scl}")
+    print(f"Average Skin Conductance Level: {average_scl:.3f} mS")
     vars['average_scl'] = average_scl
-    print(f"Skin Conductance Level Standard deviation: {scl_sd}")
+    print(f"Skin Conductance Level Standard deviation: {scl_sd:.3f} mS")
     vars['scl_sd'] = scl_sd
-    print(f"Skin Conductance Level Coefficient of Variation: {scl_cv}")
+    print(f"Skin Conductance Level Coefficient of Variation: {scl_cv:.3f} %")
     vars['scl_cv'] = scl_cv
-    print(f"Average Amplitude of Skin Conductance Response: {average_scr_amplitude}")
+    print(f"Average Amplitude of Skin Conductance Response: {average_scr_amplitude:.3f} mS")
     vars['average_scr_amplitude'] = average_scr_amplitude
-    print(f"Skin Conductance Response Validity: {scr_amplitude_validity}")
+    print(f"Skin Conductance Response Validity: {scr_amplitude_validity:.3f} %")
     vars['sc_validity'] = scr_amplitude_validity
-    print(f"Signal to Noise Ratio: {eda_snr(eda_signals, eda_df, eda_sampling_rate)}")
+    print(f"Signal to Noise Ratio: {eda_snr(eda_signals, eda_df, eda_sampling_rate):.3f} dB")
     vars['snr'] = eda_snr(eda_signals, eda_df, eda_sampling_rate)
 
     eda_slope_fig = scl_trend_analysis(eda_signals, eda_df, eda_sampling_rate, subject)
@@ -216,6 +215,3 @@ if __name__ == "__main__":
     pass
 
 # %%
-# allow the functions in this script to be imported into other scripts
-if __name__ == "__main__":
-    pass
