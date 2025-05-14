@@ -174,3 +174,7 @@ def rsp_qc(xdf_filename:str) -> dict:
     print(f"Autocorrelation at typical breath cycle: {vars['autocorrelation']:.3f}")
 
     return vars
+
+# allow the functions in this script to be imported into other scripts
+if __name__ == "__main__":
+    pass

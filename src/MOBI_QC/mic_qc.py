@@ -84,5 +84,6 @@ def mic_qc(xdf_filename:str) -> dict:
     return vars
 
 
-
-
+# allow the functions in this script to be imported into other scripts
+if __name__ == "__main__":
+    pass
