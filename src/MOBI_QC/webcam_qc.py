@@ -139,36 +139,37 @@ def plot_frames_with_wrap(frames, highlight_indices=[], overlap_ratio=0.3, frame
 
 
 def webcam_qc(xdf_filename:str, video_file:str, task:str):
-    cam_df = import_webcam_data(xdf_filename)
+    cam_df = import_video_data(xdf_filename)
     stim_df = import_stim_data(xdf_filename)
 
-    exp_start = stim_df.loc[stim_df.event == 'Onset_Experiment', 'lsl_time_stamp'].values[0]
-    exp_end = stim_df.loc[stim_df.event == 'Offset_Experiment', 'lsl_time_stamp'].values[0]
+    exp_start = stim_df.loc[stim_df.event == f'Onset_{task}', 'lsl_time_stamp'].values[0]
+    exp_end = stim_df.loc[stim_df.event == f'Offset_{task}', 'lsl_time_stamp'].values[0]
     experiment_dur = exp_end - exp_start
 
-    cam_exp = get_event_data('Experiment', cam_df, stim_df=stim_df)
+    cam_exp = get_event_data(task, cam_df, stim_df=stim_df)
+
     start = cam_exp['lsl_time_stamp'].values[0]
     stop = cam_exp['lsl_time_stamp'].values[-1]
     cam_dur = stop - start
     vars = {}
     
     if abs(experiment_dur - cam_dur) < 0.1:
-        print('Experiment duration matches camera duration!')
-        vars['collected_full_experiment'] = True
-        print('Experiment: ', experiment_dur)
+        print(f'{task} duration matches camera duration!')
+        vars[f'collected_full_{task}'] = True
+        print(f'{task}: ', experiment_dur)
         print('Webcam Stream: ', cam_dur)
     else:
-        print('Experiment duration does not match camera duration!')
-        vars['collected_full_experiment'] = True
+        print(f'{task} duration does not match camera duration!')
+        vars[f'collected_full_{task}'] = True
 
-        print('Experiment: ', experiment_dur)
+        print(f'{task}: ', experiment_dur)
         print('Webcam Stream: ', cam_dur)
 
     sampling_rate = 1/cam_df.frame_time_sec.diff().mean()  # 30 fps
     vars['sampling_rate'] = sampling_rate
     cam_df['face_detected'] = False
 
-    fc, face_frames, frames_checked = count_faces_in_video(vid_path, frame_skip=10, foi=vid_frames)
+    fc, face_frames, frames_checked = count_faces_in_video(video_file, cam_df=cam_df, stim_df=stim_df, task=task, frame_skip=10)
     frames_without_faces = [frame for frame in frames_checked if frame not in face_frames]
     face_perc = fc/len(frames_checked)
     vars['face_perc'] = face_perc
@@ -176,7 +177,7 @@ def webcam_qc(xdf_filename:str, video_file:str, task:str):
 
     frame_indices = frames_checked[5::5] # plot every 5th frame
     highlight_indices = [frame_indices.index(xx)  for xx in [x for x in frames_without_faces if x in frame_indices]] # Indices of frames to be highlighted in red
-    frames = extract_frames(vid_path, frame_indices, resize_scale=0.35)
+    frames = extract_frames(video_file, frame_indices, resize_scale=0.35)
     canvas = plot_frames_with_wrap(frames, highlight_indices=highlight_indices, overlap_ratio=0.3, frames_per_row=30)
     # same the canvas
     plt.imsave('report_images/webcam_qc.png', canvas)
