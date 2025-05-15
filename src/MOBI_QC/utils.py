@@ -27,7 +27,7 @@ def get_collection_date(xdf_filename):
 
 
 def import_webcam_data(xdf_filename):    
-    cam_data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'WebcamStream'}])
+    cam_data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'WebcamStream'}], verbose=False)
     frame_nums = [int(i[0]) for i in cam_data[0]['time_series']]
     time_pre = [float(i[1]) for i in cam_data[0]['time_series']]
     time_evnt_ms = [float(i[2]) for i in cam_data[0]['time_series']]
