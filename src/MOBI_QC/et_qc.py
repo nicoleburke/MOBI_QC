@@ -38,8 +38,6 @@ def et_flag_1(val_df: pd.DataFrame) -> bool:
             if current_percent != prev_percent:
                 print("ERROR: {} does not equal {}!".format(val_df.loc[i-1, 'variable'], val_df.loc[i, 'variable']))
                 val_flag1 = False
-    if val_flag1:
-        print("all coordinates have the same % validity within each measure (LR, gaze point/origin/diameter)")
 
     return val_flag1
 
@@ -61,11 +59,8 @@ def et_flag_2(val_df: pd.DataFrame) -> bool:
                 if root_percent != matching_percent:
                     print("ERROR: {} and {} were different by a difference of {}.".format(matching_variable, root, (root_percent-matching_percent)))
                     val_flag2 = False
-    
-    if val_flag2:
-        print("% NaNs is the same between UCS and TBCS (gaze origin) and between UCS and display area (gaze point)")
 
-    val_flag2
+    return val_flag2
 
 def et_val_LR(val_df: pd.DataFrame) -> float:
     # compare valid data between left and right eyes

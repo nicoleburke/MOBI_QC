@@ -24,8 +24,6 @@ def get_collection_date(xdf_filename):
     stim_df.loc[stim_df.event == "psychopy_time_stamp", "trigger"].to_list()[0]
     return datetime.datetime.fromtimestamp(stim_df.loc[stim_df.event == "psychopy_time_stamp", "trigger"].to_list()[0]).strftime('%Y-%m-%d %H:%M:%S')
 
-
-
 def import_webcam_data(xdf_filename):    
     cam_data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'WebcamStream'}], verbose=False)
     frame_nums = [int(i[0]) for i in cam_data[0]['time_series']]
@@ -42,7 +40,6 @@ def import_webcam_data(xdf_filename):
     cam_df['frame_time_sec'] = (cam_df.cap_time_ms - cam_df.cap_time_ms[0])/1000
     cam_df['lsl_time_sec'] = (cam_df.lsl_time_stamp - cam_df.lsl_time_stamp[0]) *1000
     return cam_df
-
 
 def import_physio_data(xdf_filename):
     data, _ = pyxdf.load_xdf(xdf_filename, select_streams=[{'name': 'OpenSignals'}], verbose = False)
@@ -311,7 +308,7 @@ def whole_durations(xdf_path):
     return(whole_durations_df)# #
 
 def get_sampling_rate(df):
-    effective_sampling_rate = 1 / (df.lsl_time_stamp.diff().mean())
+    effective_sampling_rate = 1 / (df.lsl_time_stamp.diff().median())
     return effective_sampling_rate
 
 # allow the functions in this script to be imported into other scripts
