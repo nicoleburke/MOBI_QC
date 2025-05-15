@@ -129,7 +129,6 @@ def et_lineplot(et_df: pd.DataFrame, percent_over02: float, sub_id: str):
     plt.ylabel("Gaze Point Difference (mm)")
     plt.xlabel("Time (s)")
     plt.legend()
-    print(f"percent over 0.20: {percent_over02}%")
     plt.tight_layout()
     plt.savefig(f'report_images/{sub_id}_et_gazedifference.png')
 
@@ -147,16 +146,16 @@ def et_qc(xdf_filename: str):
     print(f"Effective sampling rate: {sampling_rate:.3f}")
 
     vars['flag1'] = et_flag_1(val_df)
-    print(f'Flag: all coordinates have the same % validity within each measure (LR, gaze point/origin/diameter): {vars['flag1']}')
+    print(f"Flag: all coordinates have the same % validity within each measure (LR, gaze point/origin/diameter): {vars['flag1']}")
 
     vars['flag2'] = et_flag_2(val_df)
-    print(f'Flag: % of NaNs is the same between coordinate systems (UCS and TBCS (gaze origin) and between UCS and display area (gaze point)): {vars['flag2']}')
+    print(f"Flag: % of NaNs is the same between coordinate systems (UCS and TBCS (gaze origin) and between UCS and display area (gaze point)): {vars['flag2']}")
 
     vars['LR_mean_diff'] = et_val_LR(val_df)
-    print(f'Mean difference in percent valid data between right and left eyes: {vars['LR_mean_diff']:.3%}')
+    print(f"Mean difference in percent valid data between right and left eyes: {vars['LR_mean_diff']:.3%}")
 
     vars['percent_over02'] = et_percent_over02(et_df)
-    print(f'Percent of data with gaze point differences of over 0.2 mm: {vars['percent_over02']:.3%}')
+    print(f"Percent of data with gaze point differences of over 0.2 mm: {vars['percent_over02']:.3%}")
 
     et_lineplot(et_df, vars['percent_over02'], sub_id)
 
