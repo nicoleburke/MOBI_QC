@@ -166,7 +166,7 @@ def get_event_data(event, df, stim_df):
 def get_durations(ExperimentPart, xdf_path):
     
     """
-    Get the durations of each data stream and compare to their expected duration, given an experiment arm.
+    Get the durations of each data stream and compare to their expected duration, given an experiment arm, where the expected duration is calculated from the LSL timestamps of the stimulus markers.
     
     Args:
         ExperimentPart (str): The part of the experiment to view durations. Can be one of "Experiment", 
@@ -261,7 +261,17 @@ def load_xdf_from_zip(path_to_zip):
     return data, info
 
 def whole_durations(xdf_path):
-    # import_all
+    """
+    Get the durations of each data stream and compare to their expected duration, for the entire experiment, where the expected duration is 
+    the max duration of any data stream.
+    Args:
+        xdf_path (str): The path to the xdf file.
+
+    Returns:
+        pd.DataFrame: The durations of each stream in seconds and mm:ss and the percent that that duration comprised 
+        of the max duration of all data streams. 
+    """
+    # import all data modalities
     et_df = import_et_data(xdf_path)
     stim_df = import_stim_data(xdf_path)
     eeg_df = import_eeg_data(xdf_path)
