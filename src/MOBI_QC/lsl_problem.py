@@ -9,10 +9,24 @@ from utils import *
 import math
 
 def lsl_quick_check(ps_df: pd.DataFrame):
-    quickcheck = sum([not math.isclose(x, 1/120, abs_tol=1e-2) for x in ps_df.lsl_time_stamp.diff()]) - 1
+    """
+    Quick check for gaps in LSL timestamps using physio data.
+    Args:
+        ps_df (pd.DataFrame): Dataframe containing the physio data.
+    Returns:
+        quickcheck (int): Number of instances where the difference between consecutive LSL timestamps is not close to inverse of sampling rate.
+    """
+    sampling_rate = get_sampling_rate(ps_df)
+    quickcheck = sum([not math.isclose(x, 1/sampling_rate, abs_tol=1e-2) for x in ps_df.lsl_time_stamp.diff()]) - 1
     return quickcheck
 
 def lsl_problem_plot(ps_df: pd.DataFrame, sub_id: str):
+    """
+    Plot the LSL timestamps for the physio data.
+    Args:
+        ps_df (pd.DataFrame): Dataframe containing the physio data.
+        sub_id (str): Subject ID.
+    """
     plt.plot(ps_df['lsl_time_stamp'])
     plt.xlabel('Index')
     plt.ylabel('LSL Time Stamp (s)')
@@ -20,6 +34,14 @@ def lsl_problem_plot(ps_df: pd.DataFrame, sub_id: str):
     plt.savefig(f'report_images/{sub_id}_LSL_timestamps.png')
 
 def lsl_loss_percentage(df_dict: dict, sub_id: str) -> pd.DataFrame:
+    """
+    Calculate the percentage of data loss for each modality based on LSL timestamps.
+    Args:
+        df_dict (dict): Dictionary containing dataframes for each modality.
+        sub_id (str): Subject ID.
+    Returns:
+        percent_data_loss (pd.DataFrame): Dataframe containing the percentage of data loss for each modality.
+    """
     # df with percent loss (diff greater than median)
     modalities = list(df_dict.keys())
     percent_list = []
@@ -49,6 +71,15 @@ def lsl_loss_percentage(df_dict: dict, sub_id: str) -> pd.DataFrame:
     return nonzero_loss
     
 def lsl_loss_before_social(df_dict: dict, sub_id: str, offset_social_timestamp: float) -> pd.DataFrame:
+    """
+    Calculate the percentage of data loss before the social task offset for each modality.
+    Args:
+        df_dict (dict): Dictionary containing dataframes for each modality.
+        sub_id (str): Subject ID.
+        offset_social_timestamp (float): Timestamp of  social task offset.
+    Returns:
+        percent_data_loss_social (pd.DataFrame): Dataframe containing the percentage of data loss before the social task offset for each modality.
+    """
     modalities = list(df_dict.keys())
     social_percent_list = []
 
@@ -86,6 +117,13 @@ def lsl_loss_before_social(df_dict: dict, sub_id: str, offset_social_timestamp: 
     return nonzero_loss_social
 
 def lsl_problem(xdf_filename:str):
+    """
+    Main function to check for LSL timestamp gaps in the data.
+    Args:
+        xdf_filename (str): Path to the XDF file.
+    Returns:
+        vars (dict): Dictionary containing the percentage of data loss for each modality and the number of loss instances.
+    """
     # load data 
     sub_id = xdf_filename.split('-')[1].split('/')[0]
 
@@ -105,7 +143,7 @@ def lsl_problem(xdf_filename:str):
 
     offset_social_timestamp = stim_df.loc[stim_df['event'] == 'Offset_SocialTask', 'lsl_time_stamp'].values[0]
 
-    # optional: returns number of loss instances in  ps_df has any loss
+    # optional: returns number of loss instances in ps_df
     lsl_quick_check(ps_df)
 
     lsl_problem_plot(ps_df, sub_id)
