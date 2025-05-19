@@ -156,3 +156,6 @@ def lsl_problem(xdf_filename:str):
 
     return vars
 
+# allow the functions in this script to be imported into other scripts
+if __name__ == "__main__":
+    pass
