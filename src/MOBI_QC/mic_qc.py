@@ -8,6 +8,14 @@ import matplotlib.pyplot as plt
 from utils import *
 
 def mic_lsl_wav_durations(xdf_filename:str, mic_df: pd.DataFrame) -> float:
+    """
+    Compare the duration of the .wav file and the lsl timestamps.
+    Args:
+        xdf_filename (str): path to the xdf file
+        mic_df (pd.DataFrame): dataframe containing the microphone data
+    Returns:
+        dur_diff (float): difference between the duration of the wav file and the lsl timestamps
+    """
     # get path of wav file in same folder 
     wav_path = glob(os.path.join(os.path.dirname(xdf_filename), '*.wav'))[0]
     
@@ -21,12 +29,31 @@ def mic_lsl_wav_durations(xdf_filename:str, mic_df: pd.DataFrame) -> float:
     return dur_diff
 
 def mic_nans(mic_df: pd.DataFrame) -> tuple[int, float]:
+    """
+    Calculate the number and percentage of NaN values in the microphone data.
+    Args:
+        mic_df (pd.DataFrame): dataframe containing the microphone data
+    Returns:
+        num_NaN (int): number of NaN values in mic_df
+        percent_NaN (float): percentage of NaN values in mic_df
+    """
     num_NaN = mic_df['int_array'].isna().sum()
     percent_NaN = num_NaN/len(mic_df)
 
     return num_NaN, percent_NaN
 
 def mic_samples_stats(mic_df: pd.DataFrame) -> tuple[float, float, float, int, int]:
+    """
+    Calculate stats on the microphone data.
+    Args:
+        mic_df (pd.DataFrame): dataframe containing the microphone data
+    Returns:
+        quan25 (float): first quartile of mic samples
+        quan75 (float): third quartile of mic samples
+        std (float): standard deviation of mic samples
+        minn (int): min of mic samples
+        maxx (int): max of mic samples
+    """
     quan25 = np.quantile(mic_df['int_array'], 0.25)
     quan75 = np.quantile(mic_df['int_array'], 0.75) 
     std = mic_df['int_array'].std()
@@ -36,6 +63,12 @@ def mic_samples_stats(mic_df: pd.DataFrame) -> tuple[float, float, float, int, i
     return quan25, quan75, std, minn, maxx
 
 def mic_plots(mic_df: pd.DataFrame, stim_df: pd.DataFrame):
+    """
+    Create plots for the microphone data.
+    Args:
+        mic_df (pd.DataFrame): dataframe containing the microphone data
+        stim_df (pd.DataFrame): dataframe containing stimulus markers
+    """
     #hist
     plt.hist(mic_df['int_array'], bins=100)
     plt.xlabel('Microphone Samples')
@@ -56,8 +89,14 @@ def mic_plots(mic_df: pd.DataFrame, stim_df: pd.DataFrame):
     plt.tight_layout()
     plt.savefig(f'report_images/mic_lineplot.png')
 
-
 def mic_qc(xdf_filename:str) -> dict:
+    """
+    Main function to extract microphone quality control metrics.
+    Args:
+        xdf_filename (str): Path to the XDF file containing the microphone data.
+    Returns:
+        vars (dict): Dictionary containing the quality control metrics.
+    """
     # load data
     sub_id = xdf_filename.split('-')[1].split('/')[0]
     mic_df = import_mic_data(xdf_filename)
@@ -82,7 +121,6 @@ def mic_qc(xdf_filename:str) -> dict:
     mic_plots(mic_df, stim_df)
 
     return vars
-
 
 # allow the functions in this script to be imported into other scripts
 if __name__ == "__main__":
