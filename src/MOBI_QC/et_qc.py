@@ -8,6 +8,13 @@ import matplotlib.pyplot as plt
 from utils import *
 
 def et_val(et_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate the percentage of valid data for all data columns (excluding time + validity columns) in the eye-tracking data.
+    Args:
+        et_df (pd.DataFrame): Dataframe containing the eye-tracking data.
+    Returns:
+        val_df (pd.DataFrame): Dataframe containing the percentage of valid data for each variable.
+    """
     # percent valid for all data columns (excluding time + validity columns)
 
     # remove columns w validity or time data 
@@ -26,6 +33,13 @@ def et_val(et_df: pd.DataFrame) -> pd.DataFrame:
     return val_df
 
 def et_flag_1(val_df: pd.DataFrame) -> bool:
+    """
+    Check if all coordinates have the same percentage of validity within each measure (LR, gaze point/origin/diameter).
+    Args:
+        val_df (pd.DataFrame): Dataframe containing the percentage of valid data for each variable.
+    Returns:
+        val_flag1 (bool): True if all coordinates have the same percentage of validity, False otherwise.
+    """
     # all coordinates have the same % validity within each measure (LR, gaze point/origin/diameter)
     # compare coordinates (0,1,2) (validity within measures)
     val_flag1 = True
@@ -42,6 +56,13 @@ def et_flag_1(val_df: pd.DataFrame) -> bool:
     return val_flag1
 
 def et_flag_2(val_df: pd.DataFrame) -> bool:
+    """
+    Check if the percentage of NaNs is the same between coordinate systems (UCS and TBCS for gaze origin, and between UCS and display area for gaze point).
+    Args:
+        val_df (pd.DataFrame): Dataframe containing the percentage of valid data for each variable.
+    Returns:
+        val_flag2 (bool): True if the percentage of NaNs is the same between coordinate systems, False otherwise.
+    """
     # validity between coordinate systems 
     # all coordinates have the same % validity within each measure (LR, gaze point/origin/diameter)
 
@@ -63,6 +84,13 @@ def et_flag_2(val_df: pd.DataFrame) -> bool:
     return val_flag2
 
 def et_val_LR(val_df: pd.DataFrame) -> float:
+    """
+    Compare the percentage of valid data between left and right eyes.
+    Args:
+        val_df (pd.DataFrame): Dataframe containing the percentage of valid data for each variable.
+    Returns:
+        mean_diff (float): Absolute difference of mean percentage of valid data between left and right eyes.
+    """
     # compare valid data between left and right eyes
     left = val_df[val_df.variable.str.startswith('left')]
     right = val_df[val_df.variable.str.startswith('right')]
@@ -91,6 +119,13 @@ def et_val_LR(val_df: pd.DataFrame) -> float:
     return abs(mean_diff)
 
 def et_percent_over02(et_df: pd.DataFrame) -> float:
+    """
+    Calculate the percentage of data with gaze point differences of over 0.2 mm.
+    Args:
+        et_df (pd.DataFrame): Dataframe containing the eye-tracking data.
+    Returns:
+        percent_over02 (float): Percentage of data with gaze point differences of over 0.2 mm.
+    """
     # distance between gaze points
     # remove NaNs
     et_nums = et_df[~np.isnan(et_df.left_gaze_point_on_display_area_0) &
@@ -109,6 +144,13 @@ def et_percent_over02(et_df: pd.DataFrame) -> float:
     return percent_over02 
 
 def et_lineplot(et_df: pd.DataFrame, percent_over02: float, sub_id: str):
+    """
+    Create a line plot of the distance between left and right gaze points over time.
+    Args:
+        et_df (pd.DataFrame): Dataframe containing the eye-tracking data.
+        percent_over02 (float): Percentage of data with gaze point differences of over 0.2 mm.
+        sub_id (str): Subject ID.
+    """
     # calculate distances including NaNs
     x1 = et_df.right_gaze_point_on_display_area_0
     x2 = et_df.left_gaze_point_on_display_area_0
@@ -129,6 +171,13 @@ def et_lineplot(et_df: pd.DataFrame, percent_over02: float, sub_id: str):
 
 
 def et_qc(xdf_filename: str):
+    """
+    Main function to extract eye tracking quality control metrics.
+    Args:
+        xdf_filename (str): Path to the XDF file containing eye-tracking data.
+    Returns:
+        vars (dict): Dictionary containing quality control metrics.
+    """
     sub_id = xdf_filename.split('-')[1].split('/')[0]
     et_df = import_et_data(xdf_filename)
 
@@ -156,8 +205,6 @@ def et_qc(xdf_filename: str):
 
     return vars
 
-   
-
-
-
-    return vars
+# allow the functions in this script to be imported into other scripts
+if __name__ == "__main__":
+    pass
