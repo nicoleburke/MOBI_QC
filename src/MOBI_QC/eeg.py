@@ -10,6 +10,7 @@ from scipy.signal import welch
 import warnings
 warnings.filterwarnings("ignore")
 
+
 #%%
 
 xdf_filename = '/Users/bryan.gonzalez/CUNY_subs/sub-P5029423/sub-P5029423_ses-S001_task-CUNY_run-001_mobi.xdf'
@@ -43,6 +44,7 @@ def compute_eeg_pipeline(xdf_filename):
     montage = mne.channels.make_standard_montage('GSN-HydroCel-129')
     raw.set_montage(montage, on_missing='ignore')
 
+    raw.crop(tmin=0, tmax=5)
     
     prep_params = {
             "ref_chs": "eeg",
@@ -64,7 +66,7 @@ def compute_eeg_pipeline(xdf_filename):
     vars['bad_channels_after'] = prep.still_noisy_channels
     
     fig = raw_cleaned.plot_psd(tmax=np.inf, fmax=250)
-    fig.savefig(f'report_images/{subject}_eeg_psd.png')
+    fig.figure.savefig(f'report_images/{subject}_eeg_psd.png')
     
     def annotate_blinks(
         raw: mne.io.Raw, ch_name: list[str] = ["E25", "E8"]
@@ -106,7 +108,8 @@ def compute_eeg_pipeline(xdf_filename):
     raw_cleaned.filter(l_freq=0.5, h_freq=None)
     fig = raw_cleaned.plot(show_scrollbars=False,
                         show_scalebars=False,events=None, start=0, duration=300,n_channels=75, scalings=11e-5,color='k')
-    fig.grab().save(f'report_images/{subject}_eeg_annotations.png')
+    fig.figure.savefig(f'report_images/{subject}_eeg_annotations.png')
+  
     
     blink_annotations = annotate_blinks(raw_cleaned, ch_name=["E25", "E8"])
 
@@ -134,8 +137,11 @@ def compute_eeg_pipeline(xdf_filename):
     ica = mne.preprocessing.ICA(n_components=.99, method='picard')
     ica.fit(filt_raw)
     #ica.plot_sources(filt_raw)
-    ica.plot_components()#.savefig(f'report_images/{subject}_ica_components.png')
-    plt.savefig(f'report_images/{subject}_ica_components.png')
+    fig = ica.plot_components()#.savefig(f'report_images/{subject}_ica_components.png')
+    for i, f in enumerate(fig):
+        f.savefig(f'report_images/{subject}_ica_components_{i}.png')
+        plt.close('all')
+    #plt.savefig(f'report_images/{subject}_ica_components.png')
     comp_idx, scores = ica.find_bads_muscle(filt_raw)
 
     # Remove the muscle artifacts
