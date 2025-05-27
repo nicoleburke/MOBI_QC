@@ -106,16 +106,16 @@ def mic_qc(xdf_filename:str) -> dict:
 
     vars = {}
     vars['sampling_rate'] = sampling_rate
-    print(f"Effective sampling rate: {sampling_rate:.3f}")
+    print(f"Effective sampling rate: {sampling_rate:.4f}")
 
     vars['lsl_wav_duration_diff'] = mic_lsl_wav_durations(xdf_filename, mic_df)
-    print(f"Difference between .wav file and lsl timestamps durations: {vars['lsl_wav_duration_diff']:.3f}")
+    print(f"Difference between .wav file and lsl timestamps durations: {vars['lsl_wav_duration_diff']:.4f}")
 
     vars['num_NaN'], vars['percent_NaN'] = mic_nans(mic_df)
-    print(f"number of NaN's: {vars['num_NaN']} \npercent of NaN's: {vars['percent_NaN']:.3%}")
+    print(f"number of NaN's: {vars['num_NaN']} \npercent of NaN's: {vars['percent_NaN']:.4%}")
     vars['quan25'], vars['quan75'], vars['std'], vars['min'], vars['max'] = mic_samples_stats(mic_df)
     print('mic samples first quartile: {} \nmic samples third quartile: {}'.format(vars['quan25'], vars['quan75']))
-    print('mic samples standard deviation: {:.3f}'.format(vars['std']))
+    print('mic samples standard deviation: {:.4f}'.format(vars['std']))
     print(f"mic samples min: {vars['min']} \nmic samples max: {vars['max']}")
     
     mic_plots(mic_df, stim_df)

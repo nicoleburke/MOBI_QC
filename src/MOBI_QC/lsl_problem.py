@@ -59,11 +59,11 @@ def lsl_loss_percentage(df_dict: dict, sub_id: str) -> pd.DataFrame:
             amt_data_lost = df.loc[df['diff'] > median, 'diff'].values[0].sum()
             # total amount of data: last - first lsl_time_stamp
             amt_data_total = df['lsl_time_stamp'].values[-1] - df['lsl_time_stamp'].values[0]
-
-            percent_lost = round(amt_data_lost/amt_data_total * 100, 3)
+            
+            percent_lost = amt_data_lost/amt_data_total * 100
         else:
             percent_lost = 0
-        percent_list.append({'subject': sub_id, 'modality': modality, 'num_losses': loss_instances, 'percent_lost': str(percent_lost)+'%'})
+        percent_list.append({'subject': sub_id, 'modality': modality, 'num_losses': loss_instances, 'percent_lost': f"{percent_lost:.4f}%"})
         
     percent_data_loss = pd.DataFrame(percent_list)
     percent_data_loss.sort_values(by='percent_lost', inplace=True, ascending=False)
@@ -107,9 +107,9 @@ def lsl_loss_before_social(df_dict: dict, sub_id: str, offset_social_timestamp: 
             amt_data_lost = amt_data_lost + remaining_lost
 
         amt_data_total = offset_social_timestamp - social_df['lsl_time_stamp'].values[0]
-        percent_lost = round(amt_data_lost/amt_data_total * 100, 3)
+        percent_lost = amt_data_lost/amt_data_total * 100
 
-        social_percent_list.append({'subject': sub_id, 'modality': modality, 'num_losses': loss_instances, 'percent_lost': str(percent_lost)+'%'})
+        social_percent_list.append({'subject': sub_id, 'modality': modality, 'num_losses': loss_instances, 'percent_lost': f"{percent_lost:.4f}%"})
             
     percent_data_loss_social = pd.DataFrame(social_percent_list)
     percent_data_loss_social.sort_values(by='percent_lost', inplace=True, ascending=False)
@@ -149,9 +149,15 @@ def lsl_problem(xdf_filename:str):
     lsl_problem_plot(ps_df, sub_id)
 
     vars = {}
+
     vars['percent_loss'] = lsl_loss_percentage(df_dict, sub_id)
+    if vars['percent_loss'].empty:
+        vars['percent_loss'] = f"no data loss detected for {sub_id} for entire experiment"
     print(vars['percent_loss'])
+
     vars['loss_before_social_task'] = lsl_loss_before_social(df_dict, sub_id, offset_social_timestamp)
+    if vars['loss_before_social_task'].empty:
+        vars['loss_before_social_task'] = f"no data loss detected for {sub_id} before social task"
     print(vars['loss_before_social_task'])
 
     return vars
